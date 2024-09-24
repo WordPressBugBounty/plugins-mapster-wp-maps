@@ -1,0 +1,1 @@
+# plugins-mapster-wp-maps
