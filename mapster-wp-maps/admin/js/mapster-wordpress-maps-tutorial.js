@@ -77,7 +77,7 @@
   });
 
   $(document).on('click', '#mapster-view-quick-tutorial', function() {
-    fetch(window.mapster_tutorial.rest_url + `mapster-wp-maps/set-option${window.mapster_tutorial.qd}option_name=mapster_tutorial&option_value=0`, {
+    fetch(window.mapster_tutorial.rest_url + `mapster-wp-maps/set-tutorial-option${window.mapster_tutorial.qd}value=0`, {
       headers : {
         'X-WP-Nonce' : window.mapster_tutorial.nonce,
         'Content-Type' : 'application/json'
@@ -89,7 +89,7 @@
 	})
 
   function onEnd() {
-    fetch(window.mapster_tutorial.rest_url + `mapster-wp-maps/set-option${window.mapster_tutorial.qd}option_name=mapster_tutorial&option_value=1`, {
+    fetch(window.mapster_tutorial.rest_url + `mapster-wp-maps/set-tutorial-option${window.mapster_tutorial.qd}value=1`, {
       headers : {
         'X-WP-Nonce' : window.mapster_tutorial.nonce,
         'Content-Type' : 'application/json'

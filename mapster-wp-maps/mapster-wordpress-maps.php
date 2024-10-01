@@ -9,14 +9,14 @@
  * that starts the plugin.
  *
  * @link              https://mapster.me
- * @since             1.4.1
+ * @since             1.5.0
  * @package           Mapster_Wordpress_Maps
  *
  * @wordpress-plugin
  * Plugin Name:       Mapster WP Maps
  * Plugin URI:        https://wpmaps.mapster.me/
  * Description:       Mapster WP Maps is the smoothest, easiest way to make maps for your site. No API keys required.
- * Version:           1.4.1
+ * Version:           1.5.0
  * Author:            Mapster Technology Inc
  * Author URI:        https://mapster.me
  * License:           GPL-2.0+
@@ -42,7 +42,7 @@ For version numbers, update in this file at top and in definition; update in REA
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '1.4.1' );
+define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '1.5.0' );
 define( 'MAPSTER_LOCAL_TESTING', ( get_bloginfo( 'name' ) == "Mapster Wordpress Maps Development" ? true : false ) );
 /**
  * Freemius loading and integration

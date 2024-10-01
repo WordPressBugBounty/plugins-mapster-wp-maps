@@ -206,7 +206,7 @@ class Mapster_Wordpress_Maps {
         $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_get_category_features' );
         $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_duplicate_post' );
         $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_import_gl_js_features' );
-        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_set_option' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_set_tutorial_option' );
         if ( !mwm_fs()->can_use_premium_code() ) {
             $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_import_geojson_features' );
         }

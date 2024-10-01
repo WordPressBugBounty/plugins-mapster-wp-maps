@@ -1,18 +1,17 @@
 <?php
 
 class Mapster_Wordpress_Maps_Admin_API {
-    public function mapster_wp_maps_set_option() {
-        register_rest_route( 'mapster-wp-maps', 'set-option', array(
+    public function mapster_wp_maps_set_tutorial_option() {
+        register_rest_route( 'mapster-wp-maps', 'set-tutorial-option', array(
             'methods'             => 'GET',
-            'callback'            => 'mapster_wp_maps_set_option_from_js',
+            'callback'            => 'mapster_wp_maps_set_tutorial_option_from_js',
             'permission_callback' => function () {
                 return current_user_can( 'edit_posts' );
             },
         ) );
-        function mapster_wp_maps_set_option_from_js(  $request  ) {
-            $name = $request->get_param( 'option_name' );
-            $value = $request->get_param( 'option_value' );
-            update_option( $name, $value );
+        function mapster_wp_maps_set_tutorial_option_from_js(  $request  ) {
+            $value = $request->get_param( 'value' );
+            update_option( 'mapster_tutorial', $value );
             return array(
                 "success" => true,
             );
