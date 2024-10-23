@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.6
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -213,6 +213,13 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.6.0 =
+* Fix for clicking 3D objects
+* Bug fix for "Text" Mass Editing Popup description
+* Quick set for manual view values
+* Map compare shortcode fix
+* Heatmap trimming fix
+* Style switch fix with Mapbox update 
 = 1.5.0 =
 * Custom search working with custom zoom level
 * Adding restriction by bounds to geocoder

@@ -6,7 +6,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             'methods'             => 'GET',
             'callback'            => 'mapster_wp_maps_set_tutorial_option_from_js',
             'permission_callback' => function () {
-                return current_user_can( 'edit_posts' );
+                return current_user_can( 'manage_options' );
             },
         ) );
         function mapster_wp_maps_set_tutorial_option_from_js(  $request  ) {
@@ -24,7 +24,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             'methods'             => 'POST',
             'callback'            => 'mapster_wp_maps_duplication',
             'permission_callback' => function () {
-                return current_user_can( 'edit_posts' );
+                return current_user_can( 'manage_options' );
             },
         ) );
         function mapster_wp_maps_duplication(  $request  ) {
@@ -72,7 +72,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             'methods'             => 'POST',
             'callback'            => 'mapster_wp_maps_import_geojson',
             'permission_callback' => function () {
-                return current_user_can( 'edit_posts' );
+                return current_user_can( 'manage_options' );
             },
         ) );
         function mapster_wp_maps_import_geojson(  $request  ) {
@@ -148,7 +148,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             'methods'             => 'POST',
             'callback'            => 'mapster_wp_maps_import_gl_js',
             'permission_callback' => function () {
-                return current_user_can( 'edit_posts' );
+                return current_user_can( 'manage_options' );
             },
         ) );
         function mapster_wp_maps_import_gl_js(  $request  ) {

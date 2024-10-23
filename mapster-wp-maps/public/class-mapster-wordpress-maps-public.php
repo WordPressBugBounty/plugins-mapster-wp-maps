@@ -188,7 +188,7 @@ class Mapster_Wordpress_Maps_Public {
         $directions_enabled = ( get_field( 'directions_control', $atts['id'] ) ? get_field( 'directions_control', $atts['id'] )['enable'] : false );
         $store_locator_enabled = ( get_field( 'list', $atts['id'] ) ? get_field( 'list', $atts['id'] )['store_locator_options']['enable'] : false );
         $geocoder_enabled = false;
-        $compare_enabled = ( get_field( 'map_compare_enable_map_slider', $atts['id'] ) ? get_field( 'map_compare_enable_map_slider' ) : false );
+        $compare_enabled = ( get_field( 'map_compare_enable_map_slider', $atts['id'] ) ? get_field( 'map_compare_enable_map_slider', $atts['id'] ) : false );
         if ( get_field( 'geocoder_control', $atts['id'] )['enable'] == true ) {
             $geocoder_enabled = true;
         }
@@ -293,7 +293,7 @@ class Mapster_Wordpress_Maps_Public {
         $map_container_html = "<div class='mapster-wp-maps-container'>";
         $compare_map_html = "";
         if ( $compare_enabled ) {
-            $compare_map_id = get_field( 'map_compare_compared_map' );
+            $compare_map_id = get_field( 'map_compare_compared_map', $atts['id'] );
             $compare_map_html = "\n\t\t\t\t<div class='mapster-wp-maps'\n\t\t\t\t\tid='mapster-wp-maps-" . esc_attr( $compare_map_id ) . "'\n\t\t\t\t\tdata-id='" . esc_attr( $compare_map_id ) . "'>\n\t\t\t\t</div>\n\t\t\t";
             $map_container_html = "<div class='mapster-wp-maps-container' style='height: " . esc_attr( $map_div_height ) . ";width: " . esc_attr( $map_div_width ) . "; position:relative;'>";
         }

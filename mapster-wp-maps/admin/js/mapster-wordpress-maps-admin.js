@@ -1,6 +1,21 @@
 (function( $ ) {
 	'use strict';
 
+	// Setting from current map view
+	$(document).on('click', '.mapster-set-manual-map-view', (e) => {
+		e.preventDefault();
+		let latitudeText = $('.acf-field[data-name="manual_latitude"]').find('label').find('i').text().replace('(currently: ', '').replace(')', '');
+		let longitudeText = $('.acf-field[data-name="manual_longitude"]').find('label').find('i').text().replace('(currently: ', '').replace(')', '');
+		let zoomText = $('.acf-field[data-name="manual_zoom"]').find('label').find('i').text().replace('(currently: ', '').replace(')', '');
+		let pitchText = $('.acf-field[data-name="manual_pitch"]').find('label').find('i').text().replace('(currently: ', '').replace(')', '');
+		let rotationText = $('.acf-field[data-name="manual_rotation"]').find('label').find('i').text().replace('(currently: ', '').replace(')', '');
+		$('.acf-field[data-name="manual_latitude"] input').val(parseFloat(latitudeText).toFixed(8))
+		$('.acf-field[data-name="manual_longitude"] input').val(parseFloat(longitudeText).toFixed(8))
+		$('.acf-field[data-name="manual_zoom"] input').val(parseFloat(zoomText).toFixed(8))
+		$('.acf-field[data-name="manual_pitch"] input').val(parseFloat(pitchText).toFixed(8))
+		$('.acf-field[data-name="manual_rotation"] input').val(parseFloat(rotationText).toFixed(8))
+	});
+
 	// Managing duplicated fields (after moving around a field after creating it)
 	window.addEventListener('load', function () {
 
