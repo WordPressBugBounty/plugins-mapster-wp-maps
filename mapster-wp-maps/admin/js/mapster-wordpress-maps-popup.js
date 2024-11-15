@@ -152,7 +152,7 @@
         ${layout.use_custom_css ? `<style>${css.css_editor}</style>` : ''}
         ${layout.use_custom_html ?
 					replaceHTMLValues(html.html_editor, content) :
-	        `<div id="mapster-popup" class="map-popup-background ${layout.popup_class}">
+	        `<div id="mapster-popup" class="map-popup-background ${sanitize(layout.popup_class)}">
 	          ${layout.enable_header ?
 	            `<div class="map-popup-header">
 	              <h2>${content.header_text_preview}</h2>
@@ -248,6 +248,19 @@
       $('.acf-field[data-name="css_editor"] :input').val(style);
     }
   }
+
+	function sanitize(string) {
+	  const characterReplace = {
+	      '&': '&amp;',
+	      '<': '&lt;',
+	      '>': '&gt;',
+	      '"': '&quot;',
+	      "'": '&#x27;',
+	      "/": '&#x2F;',
+	  };
+	  const reg = /[&<>"'/]/ig;
+	  return string.replace(reg, (match)=>(characterReplace[match]));
+	}
 
   function setEventListeners() {
     var inputs = { ...getDefaultValues(), ...getCSS(), ...getLayout(), ...getContent(), ...getHTML() };

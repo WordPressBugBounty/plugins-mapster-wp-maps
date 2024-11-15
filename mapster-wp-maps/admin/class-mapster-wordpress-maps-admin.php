@@ -183,7 +183,10 @@ class Mapster_Wordpress_Maps_Admin {
             $map_provider = ( $map_type && $map_type['map_provider'] ? $map_type['map_provider'] : "maplibre" );
             $model_3d_library = get_field( 'load_3d_model_libraries', $post->ID );
             $elevation_chart_enabled = get_field( 'elevation_line_chart_enable_elevation_chart', $post->ID );
-            $store_locator_enabled = ( get_field( 'list', $post->ID ) ? get_field( 'list', $post->ID )['store_locator_options']['enable'] : false );
+            $store_locator_enabled = false;
+            if ( get_field( 'list', $post->ID ) && isset( get_field( 'list', $post->ID )['store_locator_options'] ) ) {
+                $store_locator_enabled = get_field( 'list', $post->ID )['store_locator_options']['enable'];
+            }
             $last_dependency = 'jquery';
             if ( MAPSTER_LOCAL_TESTING ) {
                 $this->mapster_wordpress_maps_script_loading_dev(
@@ -376,6 +379,12 @@ class Mapster_Wordpress_Maps_Admin {
             $this->version
         );
         wp_register_style(
+            'mapster_map_searchbox_css',
+            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-searchbox-beta.css",
+            array(),
+            $this->version
+        );
+        wp_register_style(
             $this->plugin_name,
             plugin_dir_url( __FILE__ ) . '../admin/css/mapster-wordpress-maps.css',
             array(),
@@ -472,6 +481,14 @@ class Mapster_Wordpress_Maps_Admin {
             $this->version
         );
         $last_dependency = 'mapster_map_directions_js';
+        wp_enqueue_style( "mapster_map_searchbox_css" );
+        wp_enqueue_script(
+            'mapster_map_searchbox_js',
+            plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-searchbox-beta.js",
+            array($last_dependency),
+            $this->version
+        );
+        $last_dependency = 'mapster_map_searchbox_js';
         wp_enqueue_style( "mapster_map_geocoder_css" );
         wp_enqueue_script(
             'mapster_map_geocoder_js',
@@ -544,6 +561,13 @@ class Mapster_Wordpress_Maps_Admin {
             $this->version
         );
         $last_dependency = $this->plugin_name . "-DownloadControl";
+        wp_enqueue_script(
+            $this->plugin_name . "-MapsterSearchBoxControl",
+            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js',
+            array($last_dependency),
+            $this->version
+        );
+        $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
         wp_enqueue_script(
             $this->plugin_name . "-CategoryControl",
             plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CategoryControl.js',

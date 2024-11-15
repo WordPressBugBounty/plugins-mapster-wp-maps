@@ -3,8 +3,8 @@ Contributors: tempranova, mapster
 Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
-Tested up to: 6.6
-Stable tag: 1.6.0
+Tested up to: 6.7
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -213,13 +213,23 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.7.1 =
+* Fix with category list special properties
+* Large custom image maps working in mobile
+* Fix for missing popups on full screen maps
+* Allow text overlap
+* Adding popup anchor options
+* Popup fixes and map centering fixes for Store Locator
 = 1.6.0 =
 * Fix for clicking 3D objects
 * Bug fix for "Text" Mass Editing Popup description
 * Quick set for manual view values
 * Map compare shortcode fix
 * Heatmap trimming fix
-* Style switch fix with Mapbox update 
+* Style switch fix with Mapbox update
+* Improving security for API endpoints
+* Alignment fix for popup text
+* Security fix for popup JS injection
 = 1.5.0 =
 * Custom search working with custom zoom level
 * Adding restriction by bounds to geocoder
