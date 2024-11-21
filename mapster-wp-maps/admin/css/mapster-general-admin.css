@@ -167,6 +167,7 @@ body .acf-field.acf-field-62832f86ed5ce .acf-label {
 #acf-group_61636c62b003e .acf-field-group[data-name="cluster_options"] .acf-input .acf-fields,
 #acf-group_61636c62b003e .acf-field-group[data-name="loading"] .acf-input .acf-fields,
 #acf-group_61636c62b003e .acf-field-group[data-name="3d_model"] .acf-input .acf-fields,
+#acf-group_61636c62b003e .acf-field-group[data-name="searchbox_control"],
 #acf-group_61636c62b003e .acf-field-group[data-name="user_submission_options"] {
   display : none;
 }

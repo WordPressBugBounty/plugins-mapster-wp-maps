@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.7
-Stable tag: 1.7.1
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -213,6 +213,9 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.9.0 =
+= 1.8.0 =
+* Bug fix for geocoder search
 = 1.7.1 =
 * Fix with category list special properties
 * Large custom image maps working in mobile

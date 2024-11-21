@@ -378,12 +378,7 @@ class Mapster_Wordpress_Maps_Admin {
             array(),
             $this->version
         );
-        wp_register_style(
-            'mapster_map_searchbox_css',
-            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-searchbox-beta.css",
-            array(),
-            $this->version
-        );
+        // wp_register_style('mapster_map_searchbox_css', plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-searchbox-beta.css", array(), $this->version);
         wp_register_style(
             $this->plugin_name,
             plugin_dir_url( __FILE__ ) . '../admin/css/mapster-wordpress-maps.css',
@@ -481,14 +476,9 @@ class Mapster_Wordpress_Maps_Admin {
             $this->version
         );
         $last_dependency = 'mapster_map_directions_js';
-        wp_enqueue_style( "mapster_map_searchbox_css" );
-        wp_enqueue_script(
-            'mapster_map_searchbox_js',
-            plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-searchbox-beta.js",
-            array($last_dependency),
-            $this->version
-        );
-        $last_dependency = 'mapster_map_searchbox_js';
+        // wp_enqueue_style( "mapster_map_searchbox_css" );
+        // wp_enqueue_script('mapster_map_searchbox_js', plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-searchbox-beta.js", array($last_dependency), $this->version);
+        // $last_dependency = 'mapster_map_searchbox_js';
         wp_enqueue_style( "mapster_map_geocoder_css" );
         wp_enqueue_script(
             'mapster_map_geocoder_js',
@@ -561,13 +551,8 @@ class Mapster_Wordpress_Maps_Admin {
             $this->version
         );
         $last_dependency = $this->plugin_name . "-DownloadControl";
-        wp_enqueue_script(
-            $this->plugin_name . "-MapsterSearchBoxControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js',
-            array($last_dependency),
-            $this->version
-        );
-        $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
+        // wp_enqueue_script($this->plugin_name . "-MapsterSearchBoxControl", plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js', array($last_dependency), $this->version);
+        // $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
         wp_enqueue_script(
             $this->plugin_name . "-CategoryControl",
             plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CategoryControl.js',

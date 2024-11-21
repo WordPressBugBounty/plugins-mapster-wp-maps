@@ -204,10 +204,10 @@ class Mapster_Wordpress_Maps_Public {
         if ( get_field( 'submission_enable_submission', $atts['id'] ) == true ) {
             $geocoder_enabled = true;
         }
-        $searchbox_enabled = false;
-        if ( get_field( 'searchbox_control', $atts['id'] ) && get_field( 'searchbox_control', $atts['id'] )['enable'] == true ) {
-            $searchbox_enabled = true;
-        }
+        // $searchbox_enabled = false;
+        // if(get_field('searchbox_control', $atts['id']) && get_field('searchbox_control', $atts['id'])['enable'] == true) {
+        // 	$searchbox_enabled = true;
+        // }
         $last_dependency = 'jquery';
         if ( MAPSTER_LOCAL_TESTING ) {
             $this->mapster_wordpress_maps_script_loading_dev(
@@ -216,7 +216,6 @@ class Mapster_Wordpress_Maps_Public {
                 $settings_page_id,
                 $directions_enabled,
                 $geocoder_enabled,
-                $searchbox_enabled,
                 $compare_enabled,
                 $model_3d_library,
                 $elevation_chart_enabled,
@@ -333,7 +332,6 @@ class Mapster_Wordpress_Maps_Public {
         $settings_page_id,
         $directions_enabled,
         $geocoder_enabled,
-        $searchbox_enabled,
         $compare_enabled,
         $model_3d_library,
         $elevation_chart_enabled,
@@ -365,12 +363,7 @@ class Mapster_Wordpress_Maps_Public {
             array(),
             $this->version
         );
-        wp_register_style(
-            'mapster_map_searchbox_css',
-            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-searchbox-beta.css",
-            array(),
-            $this->version
-        );
+        // wp_register_style('mapster_map_searchbox_css', plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-searchbox-beta.css", array(), $this->version);
         wp_register_style(
             'mapster_map_geocoder_css',
             plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-geocoder-4.7.2.css",
@@ -461,16 +454,11 @@ class Mapster_Wordpress_Maps_Public {
             );
             $last_dependency = 'mapster_map_geocoder_js';
         }
-        if ( $searchbox_enabled ) {
-            wp_enqueue_style( "mapster_map_searchbox_css" );
-            wp_enqueue_script(
-                'mapster_map_searchbox_js',
-                plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-searchbox-beta.js",
-                array($last_dependency),
-                $this->version
-            );
-            $last_dependency = 'mapster_map_searchbox_js';
-        }
+        // if($searchbox_enabled) {
+        // 	wp_enqueue_style( "mapster_map_searchbox_css" );
+        // 	wp_enqueue_script('mapster_map_searchbox_js', plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-searchbox-beta.js", array($last_dependency), $this->version);
+        // 	$last_dependency = 'mapster_map_searchbox_js';
+        // }
         if ( $compare_enabled ) {
             wp_enqueue_style( "mapster_map_" . $map_provider . "_compare_css" );
             wp_enqueue_script(
@@ -545,13 +533,8 @@ class Mapster_Wordpress_Maps_Public {
             $this->version
         );
         $last_dependency = $this->plugin_name . "-DownloadControl";
-        wp_enqueue_script(
-            $this->plugin_name . "-MapsterSearchBoxControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js',
-            array($last_dependency),
-            $this->version
-        );
-        $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
+        // wp_enqueue_script($this->plugin_name . "-MapsterSearchBoxControl", plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js', array($last_dependency), $this->version);
+        // $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
         wp_enqueue_script(
             $this->plugin_name . "-CategoryControl",
             plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CategoryControl.js',
