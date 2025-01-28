@@ -626,7 +626,14 @@ class Mapster_Wordpress_Maps_Admin_API {
             }
             ob_get_clean();
             // return array("test" => $testdata);
-            // return json_decode('');
+            // $ch = curl_init();
+            // curl_setopt($ch, CURLOPT_URL, "https://swplus.be/wp-json/mapster-wp-maps/map?id=14642");
+            // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+            // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+            // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            // $response = curl_exec($ch);
+            // return json_decode($response);
             $toReturn = array(
                 'id'                => $post_id,
                 'cats'              => $categories,
@@ -870,13 +877,13 @@ function mapster_getPropertyList(  $data  ) {
 
 function mapster_getTermList(  $object_id  ) {
     $terms = get_the_terms( $object_id, 'wp-map-category' );
-    foreach ( $terms as $term ) {
-        if ( metadata_exists( 'term', $term->term_id, 'term_order' ) ) {
-            $term->term_order = get_term_meta( $term->term_id, 'term_order' );
-        }
-    }
     $termsToReturn = array();
     if ( mapster_can_be_looped( $terms ) ) {
+        foreach ( $terms as $term ) {
+            if ( metadata_exists( 'term', $term->term_id, 'term_order' ) ) {
+                $term->term_order = get_term_meta( $term->term_id, 'term_order' );
+            }
+        }
         foreach ( $terms as $term ) {
             $translated_term = $term;
             if ( is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {

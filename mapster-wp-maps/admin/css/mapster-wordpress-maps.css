@@ -527,6 +527,9 @@ body #mapster-wp-maps-preview .gm-style .mapster-list-control.mapster-list-contr
 body .mapster-wp-maps.google-maps-store-locator-overflow {
   overflow: visible !important;
 }
+body .mapster-wp-maps-container .maplibregl-marker:hover, body .mapster-wp-maps-container .mapboxgl-marker:hover {
+  cursor: pointer;
+}
 body .mapster-wp-maps-container .mapster-list-control.google-maps-list-locator-mobile {
   margin: 0px;
   width: 100%;

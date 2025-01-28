@@ -185,7 +185,9 @@ class Mapster_Wordpress_Maps_Admin {
             $elevation_chart_enabled = get_field( 'elevation_line_chart_enable_elevation_chart', $post->ID );
             $store_locator_enabled = false;
             if ( get_field( 'list', $post->ID ) && isset( get_field( 'list', $post->ID )['store_locator_options'] ) ) {
-                $store_locator_enabled = get_field( 'list', $post->ID )['store_locator_options']['enable'];
+                if ( is_array( get_field( 'list', $post->ID ) ) && !empty( get_field( 'list', $post->ID )['store_locator_options']['enable'] ) ) {
+                    $store_locator_enabled = get_field( 'list', $atts['id'] )['store_locator_options']['enable'];
+                }
             }
             $last_dependency = 'jquery';
             if ( MAPSTER_LOCAL_TESTING ) {

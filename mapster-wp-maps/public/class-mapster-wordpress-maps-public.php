@@ -188,7 +188,9 @@ class Mapster_Wordpress_Maps_Public {
         $directions_enabled = ( get_field( 'directions_control', $atts['id'] ) ? get_field( 'directions_control', $atts['id'] )['enable'] : false );
         $store_locator_enabled = false;
         if ( get_field( 'list', $atts['id'] ) && isset( get_field( 'list', $atts['id'] )['store_locator_options'] ) ) {
-            $store_locator_enabled = get_field( 'list', $atts['id'] )['store_locator_options']['enable'];
+            if ( is_array( get_field( 'list', $atts['id'] ) ) && !empty( get_field( 'list', $atts['id'] )['store_locator_options']['enable'] ) ) {
+                $store_locator_enabled = get_field( 'list', $atts['id'] )['store_locator_options']['enable'];
+            }
         }
         $geocoder_enabled = false;
         $compare_enabled = ( get_field( 'map_compare_enable_map_slider', $atts['id'] ) ? get_field( 'map_compare_enable_map_slider', $atts['id'] ) : false );
