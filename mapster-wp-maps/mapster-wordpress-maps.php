@@ -9,14 +9,14 @@
  * that starts the plugin.
  *
  * @link              https://mapster.me
- * @since             1.10.0
+ * @since             1.12.0
  * @package           Mapster_Wordpress_Maps
  *
  * @wordpress-plugin
- * Plugin Name:       Mapster WP Maps
+ * Plugin Name: Mapster WP Maps Pro
  * Plugin URI:        https://wpmaps.mapster.me/
  * Description:       Mapster WP Maps is the smoothest, easiest way to make maps for your site. No API keys required.
- * Version:           1.10.0
+ * Version:           1.12.0
  * Author:            Mapster Technology Inc
  * Author URI:        https://mapster.me
  * License:           GPL-2.0+
@@ -24,6 +24,8 @@
  * Text Domain:       mapster-wp-maps
  * Domain Path:       /languages
  *
+ * @fs_premium_only /admin/includes/mapbox-style-jsons/, /includes/carbon-fields/, /public/js/pro/, /admin/js/dev/, /admin/js/pro/, /admin/css/pro/, /admin/api/class-mapster-wordpress-maps-pro-api.php, /admin/includes/mapster-embed-map.php, /admin/includes/mapster-submission-template.php, /admin/partials/class-mapster-wordpress-maps-mass-edit.php
+ * @fs_free_only /admin/js/dev/
  */
 // If this file is called directly, abort.
 if ( !defined( 'WPINC' ) ) {
@@ -43,7 +45,7 @@ For version numbers, update in this file at top and in definition; update in REA
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '1.10.0' );
+define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '1.12.0' );
 define( 'MAPSTER_LOCAL_TESTING', ( get_bloginfo( 'name' ) == "Mapster Wordpress Maps Development" ? true : false ) );
 /**
  * Freemius loading and integration
@@ -52,7 +54,7 @@ if ( !defined( 'ABSPATH' ) ) {
     exit;
 }
 if ( function_exists( 'mwm_fs' ) ) {
-    mwm_fs()->set_basename( false, __FILE__ );
+    mwm_fs()->set_basename( true, __FILE__ );
 } else {
     if ( !function_exists( 'mwm_fs' ) ) {
         // Create a helper function for easy SDK access.
@@ -66,7 +68,7 @@ if ( function_exists( 'mwm_fs' ) ) {
                     'slug'           => 'mapster-wp-maps',
                     'type'           => 'plugin',
                     'public_key'     => 'pk_91077b881f40e3e18dd3c28db6e1d',
-                    'is_premium'     => false,
+                    'is_premium'     => true,
                     'premium_suffix' => 'Pro',
                     'has_addons'     => false,
                     'has_paid_plans' => true,
@@ -101,6 +103,35 @@ if ( function_exists( 'mwm_fs' ) ) {
     }
     if ( !class_exists( 'acf_code_field' ) ) {
         include_once plugin_dir_path( __FILE__ ) . 'includes/acf-code-field/acf-code-field.php';
+    }
+    if ( mwm_fs()->is__premium_only() ) {
+        if ( !class_exists( 'Carbon_Fields' ) ) {
+            // Made custom modifications to this (/core/Loader and core/Libraries/Sidebar_Manager)
+            // So it doesn't load outside the Mapster posts, slowing down the site
+            include_once plugin_dir_path( __FILE__ ) . 'includes/carbon-fields/carbon-fields-plugin.php';
+        }
+        if ( !class_exists( 'geoPHP' ) ) {
+            include_once plugin_dir_path( __FILE__ ) . 'includes/geo-php/geoPHP.inc';
+        }
+        if ( !class_exists( 'Polyline' ) ) {
+            include_once plugin_dir_path( __FILE__ ) . 'includes/google-map-polyline-encoding-tool/Polyline.php';
+        }
+        if ( class_exists( 'GF_Fields' ) ) {
+            include_once plugin_dir_path( __FILE__ ) . 'includes/gravity-mapster-map/gravity-mapster-map.php';
+        }
+    }
+    if ( mwm_fs()->is__premium_only() ) {
+        if ( !class_exists( '\\CURLStringFile' ) ) {
+            class CURLStringFile extends CURLFile {
+                public function __construct( string $data, string $postname, string $mime = "application/octet-stream" ) {
+                    $this->name = 'data://' . $mime . ';base64,' . base64_encode( $data );
+                    $this->mime = $mime;
+                    $this->postname = $postname;
+                }
+
+            }
+
+        }
     }
     /**
      * The code that runs during plugin activation.

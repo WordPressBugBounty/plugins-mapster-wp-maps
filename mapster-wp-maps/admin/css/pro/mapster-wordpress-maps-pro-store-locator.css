@@ -1,0 +1,117 @@
+
+.mapster-list-control.mapster-store-locator.mapster-mobile {
+  width: 100%;
+  margin-left: 0px;
+}
+
+.mapster-list-control.mapster-store-locator .mapboxgl-ctrl-geocoder {
+  float: none;
+  margin-left: -5px;
+  margin-top: -5px;
+  margin-right: -5px;
+  width: 300px;
+  margin-bottom: 10px;
+}
+
+.mapster-list-control.mapster-store-locator .mapboxgl-ctrl-geocoder input[type=text] {
+  border: none;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-list-control-content, .mapster-list-control.mapster-store-locator .mapster-list-control-single-content {
+  overflow-y: auto;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-list-title {
+  font-size: 15px;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-list-address {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.mapster-list-control.mapster-store-locator a {
+  text-decoration: none;
+}
+.mapster-list-control.mapster-store-locator .mapster-select {
+  float: right;
+  margin-left: 10px;
+}
+.mapster-list-control.mapster-store-locator .mapster-custom-icon-button {
+  float: right;
+  margin-left: 10px;
+  width: 20px;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-results {
+  padding: 5px;
+  border: thin solid #eee;
+  cursor: pointer;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-results:hover {
+  background: #eee;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item img {
+  width: 100%;
+  padding: 7px;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item h3 {
+  font-size : 25px;
+  padding-top: 10px;
+  font-weight: bold;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-custom-icon {
+  font-size: 14px;
+  font-weight: bold;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-custom-icon img {
+  width: 20px;
+  padding: 0px;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-phone-number {
+  font-size: 14px;
+  font-weight: bold;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-website {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-address {
+  font-size: 14px;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-directions {
+  width: 100%;
+  padding: 10px;
+  font-size: 12px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item h4 {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-hoo > div {
+  display: flex;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-hoo > div > div {
+  width: 50%;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-hoo > div > div:nth-child(2) p {
+  text-align: right;
+}
+
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-social-media {
+  display: flex;
+  margin-top: 10px;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-social-media > div {
+  flex: 1;
+}
+.mapster-list-control.mapster-store-locator .mapster-store-locator-item .mapster-store-locator-social-media img {
+  max-width: 20px;
+}

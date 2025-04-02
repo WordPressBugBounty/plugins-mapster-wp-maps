@@ -1,0 +1,7 @@
+/* .mapster-map-button-force-style {
+  color: black;
+} */
+.mapster-entry-map, .mapster-form-map {
+  width: 100%;
+  height: 400px;
+}

@@ -66,7 +66,57 @@
 	window.addEventListener('load', function () {
 		if($('#acf-group_61636c62b003e .mapster-controls-in-menu').length) {
 			$('#acf-group_61636c62b003e .acf-field[data-name="included_controls"] .acf-input').hide();
-		  
+		  /* <fs_premium_only> */
+			let controlObjects = [];
+			let allControls = $('*[data-name*="_control"]');
+			allControls.push($('[data-name="category_filter"]'))
+			allControls.push($('[data-name="custom_search_filter"]'))
+			allControls.push($('[data-name="filter_dropdown"]'))
+			allControls.push($('[data-name="list"]'))
+			allControls.each(function() {
+				if($(this).data('name') !== "map_type_control" && $(this).data('name') !== "street_view_control") {
+					if($(this).find('[data-name="enable"] input[type="checkbox"]').is(":checked")) {
+						controlObjects.push({
+							slug : $(this).data('name'),
+							name : $(this).find('label').first().text()
+						})
+					}
+				}
+			})
+			let currentChecked = $('#acf-group_61636c62b003e .acf-field[data-name="included_controls"] input').val();
+			if(currentChecked && currentChecked !== "") {
+				let currentCheckedParsed = JSON.parse(currentChecked)
+				currentCheckedParsed.forEach(checkedControl => {
+					let thisControlIndex = controlObjects.findIndex(control => checkedControl === control.slug)
+					controlObjects[thisControlIndex].checked = true;
+				})
+			}
+			let html = '<div class="mapster-checkbox-controls">';
+			controlObjects.forEach(control => {
+				html += `<div>`
+					html += `<input type="checkbox" ${control.checked ? "checked='checked'" : ""}" data-slug=${control.slug} /> ${control.name}`;
+				html += "</div>";
+			})
+			html += "</div>";
+			$('.mapster-controls-in-menu').html(html);
+
+			jQuery(document).on('change', '.mapster-checkbox-controls input', function() {
+				let currentChecked = $('#acf-group_61636c62b003e .acf-field[data-name="included_controls"] input[type="text"]').val();
+				let newChecked = [];
+				if(currentChecked && currentChecked !== "") {
+					newChecked = JSON.parse(currentChecked)
+				}
+				if($(this).is(':checked')) {
+					newChecked.push(jQuery(this).data('slug'));
+				} else {
+					let index = newChecked.indexOf(jQuery(this).data('slug'));
+					if(index > -1) {
+						newChecked.splice(index, 1);
+					}
+				}
+				$('#acf-field_66e210d711526-field_66e2113e11528').attr('value', JSON.stringify(newChecked));
+			})
+		  /* </fs_premium_only> */
 		}
 	})
 
@@ -75,7 +125,54 @@
 		if($('#acf-group_61636c62b003e .mapster-reorder-controls').length) {
 			$('#acf-group_61636c62b003e .acf-field[data-name="control_order"] .acf-input').hide();
 
-		  
+		  /* <fs_premium_only> */
+			let controlObjects = [];
+			let allControls = $('*[data-name*="_control"]');
+			allControls.push($('[data-name="category_filter"]'))
+			allControls.push($('[data-name="custom_search_filter"]'))
+			allControls.push($('[data-name="filter_dropdown"]'))
+			allControls.push($('[data-name="list"]'))
+			allControls.each(function() {
+				if($(this).data('name') !== "map_type_control" && $(this).data('name') !== "street_view_control") {
+					controlObjects.push({
+						slug : $(this).data('name'),
+						name : $(this).find('label').first().text(),
+						enabled : $(this).find('[data-name="enable"] input[type="checkbox"]').is(":checked")
+					})
+				}
+			})
+			let currentOrder = $('#acf-group_61636c62b003e .acf-field[data-name="control_order"] input').val();
+			let currentOrderParsed = false;
+			if(currentOrder !== "") {
+				currentOrderParsed = JSON.parse(currentOrder);
+			}
+			let orderedControls = [];
+			if(currentOrderParsed) {
+				currentOrderParsed.forEach(parsedControl => {
+					let foundControlObject = controlObjects.find(thisControl => thisControl.slug === parsedControl.slug);
+					if(foundControlObject.enabled) {
+						orderedControls.push(foundControlObject)
+					}
+				})
+			}
+			controlObjects.forEach(controlObject => {
+				let foundControlObject = orderedControls.find(thisControl => thisControl.slug === controlObject.slug)
+				if(!foundControlObject && controlObject.enabled) {
+					orderedControls.push(controlObject);
+				}
+			})
+			let html = '<div class="mapster-draggable-controls">';
+			orderedControls.forEach(control => {
+				html += `<div class="mapster-draggable-controls-parent-container" data-slug="${control.slug}">`
+					html += `${control.name}`;
+				html += "</div>";
+			})
+			html += "</div>";
+			$('.mapster-reorder-controls').html(html);
+			new Sortable($('.mapster-draggable-controls')[0], {
+				animation: 150, swapThreshold: 0.65, onEnd : checkControlOrderAndInsert
+			});
+		  /* </fs_premium_only> */
 		}
 
 		function checkControlOrderAndInsert() {
@@ -94,7 +191,77 @@
 	window.addEventListener('load', function () {
 		if($('#acf-group_61636c62b003e .mapster-reorder-categories').length) {
 			$('#acf-group_61636c62b003e .acf-field[data-name="category_order"] .acf-input').hide();
-		  
+		  /* <fs_premium_only> */
+			// Check after map loads for category control, easiest way to grab the current order
+			let checkCategoryListInterval = setInterval(() => {
+				if($('.mapster-category-control').length) {
+					clearInterval(checkCategoryListInterval);
+					let categories = [];
+					$('.mapster-category-control > div > ul').children().each(function() {
+						if($(this).is('li')) {
+							let labelWithFor = $(this).find('label[for]');
+							let categoryInfo = {
+								id : labelWithFor.attr('for'),
+								name : labelWithFor.text(),
+								children : []
+							};
+							categories.push(categoryInfo);
+						}
+						if($(this).is('ul')) {
+							$(this).children().each(function() {
+								let labelWithFor = $(this).find('label[for]');
+								let categoryInfo = {
+									id : labelWithFor.attr('for'),
+									name : labelWithFor.text()
+								};
+								categories[categories.length - 1].children.push(categoryInfo)
+							})
+						}
+					})
+					let html = '<div class="mapster-draggable-categories">';
+					categories.forEach(category => {
+						html += `<div class="mapster-draggable-category-parent-container" data-id="${category.id}">`
+							html += `${category.name}`;
+							if(category.children.length > 0) {
+								html += `<div class="mapster-draggable-category-child-container">`
+								category.children.forEach(catChild => {
+									html += `<div class="mapster-draggable-category-child" data-id="${catChild.id}">${catChild.name}</div>`;
+								})
+								html += "</div>";
+							}
+						html += "</div>";
+					})
+					html += "</div>";
+					$('.mapster-reorder-categories').html(html);
+					new Sortable($('.mapster-draggable-categories')[0], {
+						animation: 150, swapThreshold: 0.65, onEnd : checkCategoryOrderAndInsert
+					});
+					$('.mapster-draggable-category-child-container').each(function() {
+						new Sortable($(this)[0], {
+							group : 'nested2', fallbackOnBody : true, animation: 150, swapThreshold: 0.65, onEnd : checkCategoryOrderAndInsert
+						});
+					})
+				}
+			}, 100);
+
+			function checkCategoryOrderAndInsert() {
+				let categoryOrder = [];
+				$('.mapster-draggable-category-parent-container').each(function() {
+					let thisCategory = {
+						id : $(this).data('id'),
+						children : []
+					}
+					if($(this).find('.mapster-draggable-category-child')) {
+						$(this).find('.mapster-draggable-category-child').each(function() {
+							let thisCategoryChild = { id : $(this).data('id') }
+							thisCategory.children.push(thisCategoryChild);
+						});
+					}
+					categoryOrder.push(thisCategory);
+				})
+				$('#acf-field_616769a697bdd-field_61676c30af8b3-field_66c748c85807e').attr('value', JSON.stringify(categoryOrder));
+			}
+		  /* </fs_premium_only> */
 		}
 	})
 

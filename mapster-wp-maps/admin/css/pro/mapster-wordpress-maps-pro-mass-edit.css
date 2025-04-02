@@ -1,0 +1,27 @@
+.nav-tab {
+  cursor: pointer;
+}
+.nav-box {
+  display: none;
+}
+.nav-box-active {
+  display: block;
+}
+.acf-field-mapster-map,
+.acf-field-message,
+.acf-required {
+  display: none;
+}
+.mapster-mass-edit-field-container {
+  display: none;
+}
+.acf-field .acf-label p.description {
+  display: none;
+}
+.mass-edit-checkbox {
+  margin-top: 10px;
+}
+.mapster-map-loader {
+  display: none;
+  margin-top: 15px;
+}
