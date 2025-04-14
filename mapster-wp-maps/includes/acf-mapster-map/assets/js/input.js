@@ -64,21 +64,13 @@
 
 	function getDefaultCenter() {
 		let center = [0, 0]
-		/* <fs_premium_only> */
-		if(window.mapster_editor.mapster_default_lat && window.mapster_editor.mapster_default_lng) {
-			center = [parseFloat(window.mapster_editor.mapster_default_lng), parseFloat(window.mapster_editor.mapster_default_lat)]
-		}
-		/* </fs_premium_only> */
+		
 		return center;
 	}
 
 	function getDefaultZoom() {
 		let zoom = 2;
-		/* <fs_premium_only> */
-		if(window.mapster_editor.mapster_default_zoom) {
-			zoom = parseFloat(window.mapster_editor.mapster_default_zoom)
-		}
-		/* </fs_premium_only> */
+		
 		return zoom;
 	}
 
@@ -94,7 +86,7 @@
 			container: id,
 			style: {
 				'version': 8,
-				"glyphs": "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+				"glyphs": `${window.mapster_editor.directory_url}/../../../fonts/{fontstack}/{range}.pbf`,
 				'sources': {
 					'raster-tiles': {
 					'type': 'raster',
@@ -118,14 +110,7 @@
 			center: center,
 			zoom: zoom
 		}
-		/* <fs_premium_only> */
-		if(window.mapster_editor) {
-			if(window.mapster_editor.access_token && window.mapster_editor.access_token !== "" && window.mapster_editor.editing_map_style && window.mapster_editor.editing_map_style !== "") {
-				maplibregl.accessToken = window.mapster_editor.access_token;
-				mapInit['style'] = window.mapster_editor.editing_map_style;
-			}
-		}
-		/* </fs_premium_only> */
+		
 		let newMap = new maplibregl.Map(mapInit);
 		newMap.on('load', () => {
 			newMap.resize();
@@ -229,43 +214,7 @@
 	}
 
 	function setFillImage() {
-		/* <fs_premium_only> */
-		let setImage = $('.acf-field[data-name="polygon_image"]').find('img');
-
-		if(setImage && getGeoJSON().features.length > 0) {
-	    var img = new Image();
-	    img.src = setImage.attr('src');
-	    img.crossOrigin = ''
-	    img.onload = function() {
-				const base64String = getBase64Image(img);
-				if(map.getSource('fill-image')) {
-					map.getSource('fill-image').updateImage({
-						url : base64String,
-						coordinates : makePolyBoundsCoords()
-					})
-				} else {
-					map.addSource('fill-image', {
-						'type': 'image',
-						'url' : base64String,
-						'coordinates' : makePolyBoundsCoords()
-					});
-					map.addLayer({
-						id: 'fill-image-layer',
-						'type': 'raster',
-						'source': 'fill-image',
-						'paint': {
-								'raster-fade-duration': 0
-						}
-					});
-				}
-			}
-		} else {
-			if(map.getSource('fill-image')) {
-				map.removeLayer('fill-image');
-				map.removeSource('fill-image');
-			}
-		}
-		/* </fs_premium_only> */
+		
 	}
 
 	function getBase64Image(img) {
@@ -384,73 +333,12 @@
 				});
 			})
 		}
-		/* <fs_premium_only> */
-		if(getGeographyType() === 'location' && getLocationType() === '3d-model') {
-			var specialEvents = ['3d_model_file', 'scale', 'x_rotation', 'y_rotation', 'z_rotation'];
-			specialEvents.forEach(thisName => {
-				$(document).on('change', `.acf-field[data-name='3d_model'] .acf-field[data-name="${thisName}"] :input`, function() {
-					load3DModel();
-				});
-			})
-		}
-		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-image') {
-			var specialEvents = ['polygon_image'];
-			specialEvents.forEach(thisName => {
-				$(document).on('change', `.acf-field[data-name="${thisName}"] :input`, function() {
-					setFillImage();
-				});
-			})
-		}
-		/* </fs_premium_only> */
+		
 	}
 
 	// Drawing
 	function initializeMultiDraw(multiMap) {
-		/* <fs_premium_only> */
-		var fieldOptions = getFieldOptions();
-		var MultiDraw = new MapboxDraw({
-			displayControlsDefault : false,
-			controls : {
-				point : fieldOptions.pointAllowed,
-				line_string : fieldOptions.lineStringAllowed,
-				polygon : fieldOptions.polygonAllowed,
-				combine_features : true,
-				uncombine_features : true,
-				trash : true
-			}
-		});
-		multiMap.addControl(MultiDraw, 'top-left');
-		const existingGeoJSON = getGeoJSON();
-		if(existingGeoJSON.features.length > 0) {
-			MultiDraw.set(existingGeoJSON);
-		}
-
-		$(document).on('click', '#draw-single-polygon', () => {
-			MultiDraw.changeMode('draw_polygon');
-		})
-		$(document).on('click', '#draw-single-line', () => {
-			MultiDraw.changeMode('draw_line_string');
-		})
-		$(document).on('click', '#join-geometries', () => {
-			MultiDraw.combineFeatures();
-		})
-		$(document).on('click', '#separate-geometries', () => {
-			MultiDraw.uncombineFeatures();
-		})
-		$(document).on('click', '#save-multi', () => {
-			const featureCollection = MultiDraw.getAll();
-			if(featureCollection.features.length > 1) {
-				window.alert("You must have save one feature. Make sure to combine your geographies together.");
-			} else {
-				if(featureCollection.features[0].geometry.type.indexOf("Multi") === -1) {
-					window.alert("You must combine your features in order to save a multi geometry feature.");
-				} else {
-					setGeoJSON(featureCollection)
-					$('#TB_closeWindowButton').trigger('click');
-				}
-			}
-		})
-		/* </fs_premium_only> */
+		
 	}
 
 	function initializeDraw() {
@@ -900,55 +788,7 @@
 	}
 
 	function load3DModel() {
-    /*  <fs_premium_only> */
-		const modelRef = $(".acf-field[data-name='3d_model_file'] a[data-name='filename']").attr('href');
-		if(map.getLayer('feature')) {
-			map.removeLayer('feature')
-		}
-		if(modelRef !== "") {
-			const modelOrigin = getGeoJSON().features[0] ? getGeoJSON().features[0].geometry.coordinates : false;
-
-			if(modelRef !== "" && modelOrigin) {
-
-				const modelScale = $(".acf-field[data-name='3d_model'] [data-name='scale'] :input").val();
-				const modelXRotation = $(".acf-field[data-name='3d_model'] [data-name='x_rotation'] :input").val();
-				const modelYRotation = $(".acf-field[data-name='3d_model'] [data-name='y_rotation'] :input").val();
-				const modelZRotation = $(".acf-field[data-name='3d_model'] [data-name='z_rotation'] :input").val();
-
-				map.addLayer({
-					id: 'feature',
-					type: 'custom',
-					renderingMode: '3d',
-					onAdd: function (currentMap, mbxContext) {
-
-						window.tb = new window.Threebox(
-							currentMap,
-							mbxContext,
-							{ defaultLights: true }
-						);
-
-						var options = {
-							obj: modelRef,
-							type: 'gltf',
-							scale: parseFloat(modelScale),
-							units: 'meters',
-							rotation: { x: parseFloat(modelXRotation), y: parseFloat(modelYRotation), z: parseFloat(modelZRotation) } //default rotation
-						}
-
-						tb.loadObj(options, function (model) {
-							let instance = model.setCoords(modelOrigin);
-							tb.add(instance);
-						})
-
-					},
-					render: function (gl, matrix) {
-						tb.update();
-					}
-				});
-				map.setPitch(45);
-			}
-		}
-    /*  </fs_premium_only> */
+    
 
 	}
 
@@ -1103,109 +943,12 @@
 		});
 
 		jQuery(document).on('click', '.mapster-image-base', () => {
-			/* <fs_premium_only> */
-			let image_frame;
-	    if(image_frame) {
-			   image_frame.open();
-			}
-			image_frame = window.wp.media({
-         title: 'Select Media',
-         multiple : false,
-         library : {
-           type : 'image',
-         }
-      });
-
-			image_frame.on('close', function() {
-				let selection = image_frame.state().get('selection');
-				let thisSelection = selection.first();
-				if(thisSelection) {
-					var base_image_field = acf.getFields({ name : 'base_image' })[0];
-					base_image_field.val(thisSelection.id);
-					generateStyle()
-				}
-			})
-
-			image_frame.on('open',function() {
-				 let selection = image_frame.state().get('selection');
-				 let base_image_field = acf.getFields({ name : 'base_image' })[0];
-				 let id = base_image_field.val();
-				 let attachment = wp.media.attachment(id);
-				 attachment.fetch();
-				 selection.add( attachment ? [ attachment ] : [] );
-			});
-
-			image_frame.open();
-			/* </fs_premium_only> */
+			
 		});
 	}
 
 	function generateStyle() {
-		/* <fs_premium_only> */
-		let base_image_field = acf.getFields({ name : 'base_image' })[0];
-		if(base_image_field) {
-			let id = base_image_field.val();
-			if(id !== "") {
-				let attachment = wp.media.attachment(id);
-				attachment.fetch().then(() => {
-					let largestSide = attachment.attributes.width > attachment.attributes.height ? 'width' : 'height';
-					let image = new Image(attachment.attributes.width, attachment.attributes.height);
-					image.src = attachment.attributes.url;
-					image.addEventListener('load', (e) => {
-						let canvas = document.createElement("canvas");
-						let context = canvas.getContext("2d");
-						canvas.width = attachment.attributes[largestSide];
-						canvas.height = attachment.attributes[largestSide];
-						context.drawImage(image,
-							largestSide === 'height' ? (attachment.attributes.height-attachment.attributes.width) / 2 : 0,
-							largestSide === 'width' ? (attachment.attributes.width-attachment.attributes.height) / 2 : 0,
-							attachment.attributes.width,
-							attachment.attributes.height
-						)
-						let newStyle = {
-							'version': 8,
-							"glyphs": "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-							'sources': {
-								'mapster-bg-layer' : {
-									'type' : 'image',
-									'url': canvas.toDataURL(),
-									'coordinates': [
-										[-180, 85],
-										[180, 85],
-										[180, -85],
-										[-180, -85]
-									]
-								}
-							},
-							'layers': [{
-								'id': 'background',
-								'type': 'background',
-								'paint': {
-									'background-color' : 'rgba(255,255,255,1)'
-								}
-							},{
-								'id': 'mapster-bg-layer',
-								'type': 'raster',
-								'source': 'mapster-bg-layer',
-								'paint': {
-									'raster-fade-duration': 0
-								}
-							}]
-						}
-
-						map.setStyle(newStyle);
-						map.setRenderWorldCopies(false);
-						map.addSource('feature', {
-							type : 'geojson',
-							data : getGeoJSON()
-						})
-						addLayers()
-
-					});
-				});
-			}
-		}
-		/* </fs_premium_only> */
+		
 	}
 
 	function setGeocoder() {

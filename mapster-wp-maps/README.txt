@@ -3,8 +3,8 @@ Contributors: tempranova, mapster
 Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
-Tested up to: 6.7
-Stable tag: 1.12.0
+Tested up to: 6.8
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,7 @@ If you're building a really custom application or need some special functionalit
 = 🗺️ Map Features =
 
 * Additional 16 map styles, for a total of 36 styles available
+* Custom images as the map base, including scalable SVGs
 * Set 3D globe view
 * Add 3D buildings
 * Set map language
@@ -174,6 +175,11 @@ If you're building a really custom application or need some special functionalit
 * Design heatmaps with big data
 * Creating a listing page that connects your custom posts with geographic data on the map
 
+= 🖳 Developer =
+
+* Advanced Custom Fields (ACF) field type for maps
+* Gravity Forms map field
+
 Love,
 
 Your Friends at [Mapster](https://mapster.me)
@@ -213,6 +219,10 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.13.0 =
+* Loading fonts locally for free map types
+* Fix to hover popup when hovering over other polygons
+* Update for 6.8
 = 1.12.0 =
 * Adding {post_title} tag to HTML editor
 * Adding Gravity Forms integration and custom field
@@ -220,7 +230,8 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 * Fix to popups opening on listing page
 * Unlimited categories during geoJSON import (set_categories property)
 * Adding support for WEBP, AVIF, and SVG for icon images and polygon images
-* Adding support for scalable SVGs as background images for maps 
+* Adding support for scalable SVGs as background images for maps
+* Bug fix for permalink flushes
 = 1.11.0 =
 * Store Locator loading fix
 * Freemius update

@@ -179,13 +179,7 @@
 
 	function replaceHTMLValues(html, content) {
 		let htmlToReturn;
-		/* <fs_premium_only> */
-		htmlToReturn = html.replace(/\{[header\}]+\}/g, content.header_text_preview);
-		htmlToReturn = htmlToReturn.replace(/\{[image_url\}]+\}/g, "https://via.placeholder.com/150x50");
-		htmlToReturn = htmlToReturn.replace(/\{[content\}]+\}/g, content.content_preview);
-		htmlToReturn = htmlToReturn.replace(/\{[button_link\}]+\}/g, "https://example.com");
-		htmlToReturn = htmlToReturn.replace(/\{[button_text\}]+\}/g, content.button_text_preview);
-		/* </fs_premium_only> */
+		
 		return htmlToReturn;
 	}
 
