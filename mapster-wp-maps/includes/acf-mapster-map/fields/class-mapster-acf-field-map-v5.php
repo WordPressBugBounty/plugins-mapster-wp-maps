@@ -98,7 +98,7 @@ if ( !class_exists( 'mapster_acf_field_map' ) ) {
             ) );
             acf_render_field_setting( $field, array(
                 'label'         => __( 'Styling', 'mapster_acf_plugin_map' ),
-                'instructions'  => __( 'Include styling options for the geography type. Available in <a href="https://wpmaps.mapster.me/pro">Mapster Pro</a>.', 'mapster_acf_plugin_map' ),
+                'instructions'  => __( 'Include styling options for the geography type. You need to enable this in order to show your geography on a Mapster map. Available in <a href="https://wpmaps.mapster.me/pro">Mapster Pro</a>.', 'mapster_acf_plugin_map' ),
                 'default_value' => 0,
                 'ui'            => 1,
                 'ui_on_text'    => 'On',

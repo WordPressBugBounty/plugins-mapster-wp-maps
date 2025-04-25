@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.8
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -219,6 +219,13 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.14.0 =
+* Improving null location error alert
+* Added static circles
+* Fix to ACF field sans styling, more clarity
+* Major enhancements to Listing Map
+* Option to have category filter parent be cosmetic only
+* Fix for Google Maps marker popups
 = 1.13.0 =
 * Loading fonts locally for free map types
 * Fix to hover popup when hovering over other polygons

@@ -325,6 +325,14 @@
 				});
 			});
 		}
+		if(getGeographyType() === 'location' && getLocationType() === 'circle') {
+			var specialEvents = ['circle-static-size'];
+			specialEvents.forEach(thisName => {
+				$(document).on('change', `.acf-field[data-name="${thisName}"] :input`, function() {
+					setPaintAndLayoutProperties()
+				});
+			})
+		}
 		if(getGeographyType() === 'location' && getLocationType() === 'label') {
 			var specialEvents = ['label_on', 'icon_on', 'icon-image', 'icon-translate-x', 'icon-translate-y', 'text-translate-x', 'text-translate-y', 'icon-static-size'];
 			specialEvents.forEach(thisName => {
@@ -479,6 +487,10 @@
 
 	function initialize_field( $field ) {
 
+		if(!$('#'+getFieldElementWithSelector($field).attr('id')).length) {
+			return false;
+		}
+
 		// UI modifications
 		fieldSelector = $field;
 
@@ -545,13 +557,19 @@
 	function getLocationType() {
 		if($('.mapster-map-submission-frontend').length) {
 			return 'marker'
-		} else {
+		} else if($('.acf-field[data-name="location_style"]').find('select').length) {
 			return $('.acf-field[data-name="location_style"]').find('select').val()
+		} else {
+			return 'marker'
 		}
 	}
 
 	function getPolygonType() {
-		return $('.acf-field[data-name="polygon_style"]').find('select').val()
+		if($('.acf-field[data-name="polygon_style"]').find('select').length) {
+			return $('.acf-field[data-name="polygon_style"]').find('select').val()
+		} else {
+			return 'fill';
+		}
 	}
 
 	function getACFValues() {
@@ -563,11 +581,22 @@
 			var strokeWidthVal = $('.acf-field[data-name="circle"] .acf-field[data-name="stroke-width"]').find(':input').val()
 			var strokeColorVal = $('.acf-field[data-name="circle"] .acf-field[data-name="stroke-color"]').find(':input').val()
 			var strokeOpacityVal = $('.acf-field[data-name="circle"] .acf-field[data-name="stroke-opacity"]').find(':input').val()
+			var staticCircle = $('.acf-field[data-name="circle"] .acf-field[data-name="circle-static-size"]').find(':input').is(":checked");
+			let circleRadius = radiusVal !== '' ? parseFloat(radiusVal) : 5;
+			if(staticCircle) {
+				circleRadius = [
+					'interpolate',
+					['exponential', 2],
+					['zoom'],
+					0, ["*", (radiusVal !== '' ? parseFloat(radiusVal) : 5), ["^", 2, -16]],
+					24, ["*", (radiusVal !== '' ? parseFloat(radiusVal) : 5), ["^", 2, 8]]
+				]
+			}
 			const circleValues = {
 				paint : {
 					color : colorVal !== '' ? colorVal : '#000',
 					opacity : opacityVal !== '' ? parseFloat(opacityVal)/100 : 1,
-					radius : radiusVal !== '' ? parseFloat(radiusVal) : 5,
+					radius : circleRadius,
 					'stroke-width' : strokeWidthVal !== '' ? parseFloat(strokeWidthVal) : 0,
 					'stroke-color' : strokeColorVal !== '' ? strokeColorVal : '#FFF',
 					'stroke-opacity' : strokeOpacityVal !== '' ? parseFloat(strokeOpacityVal)/100 : 1
@@ -790,6 +819,10 @@
 	function load3DModel() {
     
 
+	}
+
+	function getFieldElementWithSelector(reference) {
+		return $(reference).find('.mapster-map')
 	}
 
 	function getFieldElement() {

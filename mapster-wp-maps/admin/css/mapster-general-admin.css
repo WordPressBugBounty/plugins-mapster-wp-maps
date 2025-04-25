@@ -181,7 +181,8 @@ body .acf-field.acf-field-62832f86ed5ce .acf-label {
 #acf-group_61636c62b003e .acf-field[data-name="pre_selected_categories"],
 #acf-group_61636c62b003e .acf-field[data-name="number_of_results"],
 #acf-group_61636c62b003e .acf-field[data-name="search_type"],
-.acf-field.acf-field-6329efab822ed[data-name="base_image"],
+.mapster-extra-form-fields [data-name="base_image"],
+#acf-group_6163732e0426e [data-name="base_image"],
 #acf-group_61636c62b003e .acf-field[data-name="show_all_languages"],
 #acf-group_6169ff23a6e6d .acf-field[data-name="use_custom_html"] .acf-input,
 #acf-group_61636c62b003e .acf-field[data-name="add_mobile_breakpoints"] .acf-input,
@@ -206,6 +207,7 @@ body .acf-field.acf-field-62832f86ed5ce .acf-label {
 #acf-group_616379566202f .acf-field[data-name="polygon_image"] .acf-input,
 #acf-group_6163d357655f4 .acf-field[data-name="render_shortcode"] .acf-input,
 #acf-group_61636c62b003e .acf-field[data-name="display_images"] .acf-input,
+#acf-group_6163732e0426e .acf-field[data-name="circle-static-size"] .acf-input,
 #acf-group_61636c62b003e .acf-field[data-name="map_tile_style_no_access_token"],
 #acf-group_61636c62b003e .acf-field[data-name="map_tile_style_access_token"]
  {
