@@ -7,6 +7,7 @@ add_thickbox();
 $i18n = new Mapster_Wordpress_Maps_i18n();
 $translation_strings = $i18n->get_mapster_strings()['settings'];
 $local_time = current_datetime();
+flush_rewrite_rules( false );
 ?>
 	<div class="wrap">
 		<h1>

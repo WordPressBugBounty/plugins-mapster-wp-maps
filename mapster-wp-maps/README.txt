@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.8
-Stable tag: 1.14.0
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,6 +16,7 @@ With Mapster WP Maps, we're trying to make the best map editor and creator for W
 
 We integrate **MapLibre, Mapbox, and Google Maps**. You don't need an API key to use MapLibre!
 
+* [Main site](https://wpmaps.mapster.me/)
 * [Example site](https://wpmaps.mapster.me/examples/)
 * [Documentation](https://wpmaps-docs.mapster.me/) (with video guides!)
 
@@ -219,6 +220,10 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.15.0 =
+* Fix to full page height in some cases
+* Adding header to modal popup
+* Permalink flush fix
 = 1.14.0 =
 * Improving null location error alert
 * Added static circles

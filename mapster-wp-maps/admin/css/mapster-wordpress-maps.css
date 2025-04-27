@@ -439,7 +439,7 @@ li.mapster-accordion-indicator-closed + ul {
 .mapster-modal-content iframe {
   border: none;
 }
-.mapster-modal-content-in-popup {
+.mapster-modal-content-in-popup, .mapster-modal-title-in-popup {
   display : none;
 }
 

@@ -2298,7 +2298,7 @@ if( function_exists('acf_add_local_field_group') ):
 						'choices' => array(
 							'px' => 'px',
 							'%' => '%',
-							'vh' => 'vh',
+							'vw' => 'vw',
 						),
 						'default_value' => '%',
 						'return_format' => 'value',
@@ -9797,7 +9797,15 @@ if( function_exists('acf_add_local_field_group') ):
 								'type' => 'text',
 								'instructions' => 'Add your own class to the container of the listings, so you can add grid or flex as you want.',
 								'required' => 0,
-								'conditional_logic' => 0,
+								'conditional_logic' => array(
+									array(
+										array(
+											'field' => 'field_650b762d57889',
+											'operator' => '==',
+											'value' => 'custom_html',
+										),
+									),
+								),
 								'wrapper' => array(
 									'width' => '',
 									'class' => '',
@@ -15390,6 +15398,7 @@ if( function_exists('acf_add_local_field_group') ):
 		'description' => '',
 		'show_in_rest' => 0,
 	) );
+
 
 endif;
 ?>

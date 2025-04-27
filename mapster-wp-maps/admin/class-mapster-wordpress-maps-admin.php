@@ -904,11 +904,6 @@ class Mapster_Wordpress_Maps_Admin {
             if ( $user_submission ) {
             }
         }
-        $set = get_option( 'post_type_rules_flushed_mapster_wp_maps' );
-        if ( $set !== '1' ) {
-            flush_rewrite_rules( false );
-            update_option( 'post_type_rules_flushed_mapster_wp_maps', '1' );
-        }
     }
 
     /**
