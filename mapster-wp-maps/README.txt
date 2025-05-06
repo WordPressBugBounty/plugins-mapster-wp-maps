@@ -1,10 +1,10 @@
 === Mapster WP Maps ===
-Contributors: tempranova, mapster
+Contributors: tempranova, mapster, freemius
 Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.8
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -220,6 +220,12 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.16.0 =
+* Enhanced CSV upload with recurring scheduled CSV
+* Adding complete custom fields to enhanced CSV
+* Attribution control added to Maplibre 
+* Allowing rendering of linebreaks in labels 
+* Return glyphs to remote source
 = 1.15.0 =
 * Fix to full page height in some cases
 * Adding header to modal popup

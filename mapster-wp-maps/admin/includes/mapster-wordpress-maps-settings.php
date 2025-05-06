@@ -72,8 +72,11 @@ class Mapster_Wordpress_Maps_Admin_Settings {
         <div id="gl-js-import" class='nav-tab'><?php 
         echo $i18n->get_mapster_strings()['settings']['Import Data Modal GL JS Button'];
         ?></div>
-        <div id="mapster-spreadsheet" class='nav-tab'><?php 
-        echo $i18n->get_mapster_strings()['settings']['Spreadsheet Button'];
+        <!-- <div id="mapster-static-csv" class='nav-tab'><?php 
+        // echo $i18n->get_mapster_strings()['settings']['Static CSV Button'];
+        ?></div> -->
+        <div id="mapster-live-csv" class='nav-tab'><?php 
+        echo $i18n->get_mapster_strings()['settings']['Live CSV Button'];
         ?></div>
         <div id="mapster-export-import" class='nav-tab'><?php 
         echo $i18n->get_mapster_strings()['settings']['Migration Button'];
@@ -83,18 +86,51 @@ class Mapster_Wordpress_Maps_Admin_Settings {
     <?php 
     }
 
-    public function mapster_output_spreadsheet_parent() {
+    public function mapster_output_static_csv_parent() {
         $i18n = new Mapster_Wordpress_Maps_i18n();
         ?>
-       <div id="mapster-spreadsheet-options" class="nav-box">
-         <p><?php 
-        echo $i18n->get_mapster_strings()['settings']['Spreadsheet Description'];
-        ?></p>
-         <?php 
+        <div id="mapster-static-csv-options" class="nav-box">
+          <div class="mapster-importer-row">
+            <div class="mapster-importer-column">
+              <?php 
+        echo $i18n->get_mapster_strings()['settings']['Static CSV Description'];
+        ?>
+            </div>
+            <div>
+            </div>
+          </div>
+        </div>
+     <?php 
+    }
+
+    public function mapster_output_dynamic_csv_parent() {
+        $i18n = new Mapster_Wordpress_Maps_i18n();
+        ?>
+       <div id="mapster-live-csv-options" class="nav-box">
+         <div class="mapster-importer-row">
+           <div class="mapster-importer-column" style="padding-right: 15px;">
+             <?php 
+        echo $i18n->get_mapster_strings()['settings']['Live CSV Description'];
+        ?>
+             <?php 
+        $this->mapster_csv_recurring_list();
+        ?>
+           </div>
+           <div class="mapster-importer-column">
+             <?php 
+        echo $i18n->get_mapster_strings()['settings']['Live CSV Importer Instructions'];
+        ?>
+             <?php 
         $this->mapster_spreadsheet_buttons();
         ?>
+           </div>
+         </div>
        </div>
     <?php 
+    }
+
+    public function mapster_csv_recurring_list() {
+        $i18n = new Mapster_Wordpress_Maps_i18n();
     }
 
     public function mapster_spreadsheet_buttons() {

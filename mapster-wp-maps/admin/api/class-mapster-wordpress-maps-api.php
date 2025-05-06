@@ -688,6 +688,7 @@ function replace_text_with_property_or_acf(  $post_id, $properties, $text  ) {
             }
         }
     }
+    $new_text = preg_replace( '/\\\\n/', "\n", $new_text );
     return $new_text;
 }
 

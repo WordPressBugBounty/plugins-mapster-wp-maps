@@ -86,7 +86,8 @@
 			container: id,
 			style: {
 				'version': 8,
-				"glyphs": `${window.mapster_editor.directory_url}/../../../fonts/{fontstack}/{range}.pbf`,
+				"glyphs": "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+				// "glyphs": `${window.mapster_editor.directory_url}/../../../fonts/{fontstack}/{range}.pbf`,
 				'sources': {
 					'raster-tiles': {
 					'type': 'raster',
@@ -624,6 +625,7 @@
 		if(getGeographyType() === 'location' && getLocationType() === 'label') {
 			var textOn = $('.acf-field[data-name="label"] .acf-field[data-name="label_on"]').find(':input').is(':checked')
 			var textFieldVal = $('.acf-field[data-name="label"] .acf-field[data-name="text-field"]').find(':input').val()
+			textFieldVal = textFieldVal.replace(/\\n/g, '\n');
 			var textFontVal = $('.acf-field[data-name="label"] .acf-field[data-name="text-font"]').find(':input').val()
 			var textSizeVal = $('.acf-field[data-name="label"] .acf-field[data-name="text-size"]').find(':input').val()
 			var textColorVal = $('.acf-field[data-name="label"] .acf-field[data-name="text-color"]').find(':input').val()

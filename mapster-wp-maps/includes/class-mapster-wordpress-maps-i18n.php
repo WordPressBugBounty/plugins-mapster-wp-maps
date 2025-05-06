@@ -145,15 +145,35 @@ class Mapster_Wordpress_Maps_i18n {
 				"Migration Button Export" => __('Export Mapster WP Maps Settings', "mapster-wordpress-maps"),
 				"Migration Button Import" => __('Import Mapster WP Maps Settings', "mapster-wordpress-maps"),
 
-				"Spreadsheet Button" => __('From Spreadsheet', "mapster-wordpress-maps"),
-				"Spreadsheet Description" => __('Here you can import points from a Google Sheet or other online CSV format.<br /><br />See <a href="https://docs.google.com/spreadsheets/d/1RQ4PzT4g5bjmY0dwiOfJ3YUgThnM4ZJuVSU-6rWQM1Y/edit?usp=sharing" target="_blank">here</a> for an example of how the spreadsheet or CSV should be formatted. <strong>This feature is only available in Mapster Pro.</strong>', "mapster-wordpress-maps"),
-				"Spreadsheet Google Sheet Instructions" => __('To get the URL from your Google Sheet, you must go to File > Share > Publish to Web. Select "Comma-separate values (CSV)" from the dropdown under "Link" (by default, this says "Web Page"). Press Publish and you will recieve a URL.<br /><br />To import a title from your spreadsheet, make sure you name that column <b>post_title</b>.', "mapster-wordpress-maps"),
+				"Static CSV Button" => __('Static CSV', "mapster-wordpress-maps"),
+				"Static CSV Description" => __('
+					<p>This section is for uploading a CSV file that you have on your computer. <strong>This feature is only available in Mapster Pro.</strong></p>
+					<p>For a detailed tutorial on how to use the CSV import, please see the documentation.</p>
+					<p>
+						<button id="mapster-see-csv-fields" style="margin-right: 10px;">See all Mapster property fields</button>
+						<a href="https://docs.google.com/spreadsheets/d/1RQ4PzT4g5bjmY0dwiOfJ3YUgThnM4ZJuVSU-6rWQM1Y/edit?usp=sharing" target="_blank">See example CSV</a>
+					</p>
+				', "mapster-wordpress-maps"),
+
+				"Live CSV Button" => __('Live CSV', "mapster-wordpress-maps"),
+				"Live CSV Description" => __('
+					<p>This section is for importing a CSV that you have created with Google Sheets. With this, you can make changes and see those reflected in the Wordpress data at regular intervals, linking your CSV and Mapster. <strong>This feature is only available in Mapster Pro.</strong></p>
+					<p>For a detailed tutorial on how to use the CSV import, please see the documentation.</p>
+					<p>
+						<button id="mapster-see-csv-fields" style="margin-right: 10px;">See all Mapster property fields</button>
+						<a href="https://docs.google.com/spreadsheets/d/1RQ4PzT4g5bjmY0dwiOfJ3YUgThnM4ZJuVSU-6rWQM1Y/edit?usp=sharing" target="_blank">See example CSV</a>
+					</p>
+				', "mapster-wordpress-maps"),
+				"Live CSV Importer Instructions" => __('<p>To get the URL from your Google Sheet, you must go to File > Share > Publish to Web. Select "Comma-separate values (CSV)" from the dropdown under "Link" (by default, this says "Web Page"). Press Publish and you will recieve a URL.</p>', 'mapster-wordpress-maps'),
 				"Spreadsheet CSV" => __('Enter CSV URL', "mapster-wordpress-maps"),
 				"Spreadsheet Verify" => __('Verify Spreadsheet', "mapster-wordpress-maps"),
 				"Spreadsheet Import" => __('Import Spreadsheet', "mapster-wordpress-maps"),
 				"Spreadsheet Import Options" => __('Spreadsheet Import Options', "mapster-wordpress-maps"),
-				"Spreadsheet Import Exclude" => __("If you want to exclude any columns from being imported as custom data, enter those columns here as comma-separated values. Otherwise, all data will be included as custom fields.", "mapster-wordpress-maps"),
-				"Spreadsheet Recurring Update" => __("To have this spreadsheet update associated points on a regular basis, you can enter the number of minutes you'd like to pass between each time the spreadsheet URL is fetched. Please check the Mapster documentation for more information on this: you need to have a unique_id column in your data, and you should be aware of the limitations of WP Cron systems as well.", "mapster-wordpress-maps"),
+				"Spreadsheet Set Recurring Import" => __('Create Recurring Import', "mapster-wordpress-maps"),
+				"Spreadsheet Recurring Update" => __("
+					To have this spreadsheet import run on a regular basis, you can enter the number of minutes you'd like to pass between each time the spreadsheet URL is fetched.
+					<br><br>Check the documentation for more information. <strong>You need to have a spreadsheet_id column in your data</strong>, and you should be aware of the limitations of WP Cron systems as well.
+				", "mapster-wordpress-maps"),
 
 				"Import Data Modal GL JS Button" => __('WP GL JS Maps Import', "mapster-wordpress-maps"),
 				"Import Data Modal GL JS Description" => __('This makes it easy (hopefully) to switch from our old Mapbox plugin to this new one. Export from your old map and import here. All your features will be added with their old styling included, then you will just need to go and create a new Map, and add your old features to it again. <a href="https://wpmaps.mapster.me/documentation" target="_blank">See our documentation for step-by-step instructions</a>.', "mapster-wordpress-maps"),

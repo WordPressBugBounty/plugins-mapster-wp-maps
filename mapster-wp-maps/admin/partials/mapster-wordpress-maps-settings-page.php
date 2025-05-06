@@ -50,7 +50,10 @@ $MWM_Admin_Settings->mapster_output_geo_file_importer_parent();
 $MWM_Admin_Settings->mapster_output_gl_js_importer_parent();
 ?>
 					<?php 
-$MWM_Admin_Settings->mapster_output_spreadsheet_parent();
+$MWM_Admin_Settings->mapster_output_static_csv_parent();
+?>
+					<?php 
+$MWM_Admin_Settings->mapster_output_dynamic_csv_parent();
 ?>
 					<?php 
 $MWM_Admin_Settings->mapster_output_migration_parent();

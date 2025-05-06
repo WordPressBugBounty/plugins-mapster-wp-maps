@@ -292,7 +292,10 @@ class MWM_Settings_Importer {
   importMapster() {}
 
   verifyCSV() {}
+  seeAvailableCSVFields() {}
   doCSVImport() {}
+  createRecurringImport() {}
+  removeCron() {}
 
   init() {
     let that = this;
@@ -336,12 +339,24 @@ class MWM_Settings_Importer {
       that.updateTileset();
     })
 
+    jQuery(document).on('click', '#mapster-see-csv-fields', function() {
+      that.seeAvailableCSVFields();
+    })
+
     jQuery(document).on('click', '#mapster-csv-verify', function() {
       that.verifyCSV();
     })
 
     jQuery(document).on('click', '#mapster-csv-import', function() {
       that.doCSVImport();
+    })
+
+    jQuery(document).on('click', '#mapster-csv-create-recurring-import', function() {
+      that.createRecurringImport();
+    })
+
+    jQuery(document).on('click', '.mapster-remove-cron', function() {
+      that.removeCron(jQuery(this).data('index'));
     })
 
     jQuery(document).on('click', '.nav-tab', function() {
