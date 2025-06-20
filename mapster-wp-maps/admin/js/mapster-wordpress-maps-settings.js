@@ -291,8 +291,10 @@ class MWM_Settings_Importer {
   uploadMapster(e) {}
   importMapster() {}
 
+  verifyStaticCSV() {}
   verifyCSV() {}
   seeAvailableCSVFields() {}
+  doStaticCSVImport() {}
   doCSVImport() {}
   createRecurringImport() {}
   removeCron() {}
@@ -305,6 +307,9 @@ class MWM_Settings_Importer {
     })
     jQuery(document).on('change', '#gl-js-import-file', function(e) {
       that.glJSgeoJSONUploaded(e);
+    })
+    jQuery(document).on('change', '#csv-import-file', function(e) {
+      that.verifyStaticCSV(e);
     })
     jQuery(document).on('change', '#geojson-import-category', function(e) {
       that.currentImportCategory = jQuery('#geojson-import-category').val()
@@ -347,7 +352,7 @@ class MWM_Settings_Importer {
       that.verifyCSV();
     })
 
-    jQuery(document).on('click', '#mapster-csv-import', function() {
+    jQuery(document).on('click', '.mapster-csv-import', function() {
       that.doCSVImport();
     })
 

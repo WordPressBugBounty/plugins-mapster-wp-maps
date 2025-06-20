@@ -38,6 +38,7 @@
 		        <div id="feature-type-line" class='nav-tab'><?php echo $translation_strings_mass_edit["Mass Edit Lines"]; ?> <span></span></div>
 		        <div id="feature-type-polygon" class='nav-tab'><?php echo $translation_strings_mass_edit["Mass Edit Polygons"]; ?> <span></span></div>
 		        <div id="feature-type-popup" class='nav-tab'><?php echo $translation_strings_mass_edit["Mass Edit Popups"]; ?> <span></span></div>
+		        <div id="feature-type-post_display" class='nav-tab'><?php echo $translation_strings_mass_edit["Mass Edit Post Display"]; ?> <span></span></div>
 		      </div>
 		      <hr style="clear: both;"/>
 					<div id="feature-type-point-options" class="nav-box nav-box-active">
@@ -71,6 +72,8 @@
 								'form' => false
 							));
 						?>
+					</div>
+					<div id="feature-type-post_display-options" class="nav-box nav-box-active">
 						<?php
 							acf_form(array(
 								'field_groups' => array('group_626492b319912'),

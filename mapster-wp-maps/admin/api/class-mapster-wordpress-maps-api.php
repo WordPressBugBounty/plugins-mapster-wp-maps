@@ -627,7 +627,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             ob_get_clean();
             // return array("test" => $testdata);
             // $ch = curl_init();
-            // curl_setopt($ch, CURLOPT_URL, "https://atlas.archeologiedesfuturs.org/wp-json/mapster-wp-maps/map?id=18");
+            // curl_setopt($ch, CURLOPT_URL, "https://208.109.191.74/~fechpup/wp-json/mapster-wp-maps/map?id=17");
             // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
             // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);

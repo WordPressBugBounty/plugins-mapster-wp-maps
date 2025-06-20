@@ -376,7 +376,7 @@ class Mapster_Wordpress_Maps_Admin {
         );
         wp_register_style(
             'mapster_map_geocoder_css',
-            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-geocoder-4.7.2.css",
+            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-geocoder-5.0.3.css",
             array(),
             $this->version
         );
@@ -484,7 +484,7 @@ class Mapster_Wordpress_Maps_Admin {
         wp_enqueue_style( "mapster_map_geocoder_css" );
         wp_enqueue_script(
             'mapster_map_geocoder_js',
-            plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-geocoder-4.7.2.js",
+            plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-geocoder-5.0.3.js",
             array($last_dependency),
             $this->version
         );
@@ -998,7 +998,9 @@ class Mapster_Wordpress_Maps_Admin {
         add_meta_box(
             'mapster-wp-maps-preview',
             $i18n->get_mapster_strings()['admin']['Map Preview'],
-            'my_meta_box_callback',
+            function () {
+                echo '<div id="mapster-wp-maps-map" style="width: 100%; height: 400px;"></div>';
+            },
             'mapster-wp-map',
             'normal',
             'core',
@@ -1006,10 +1008,6 @@ class Mapster_Wordpress_Maps_Admin {
                 '__block_editor_compatible_meta_box' => true,
             )
         );
-        function my_meta_box_callback() {
-            echo '<div id="mapster-wp-maps-map" style="width: 100%; height: 400px;"></div>';
-        }
-
     }
 
     /**
@@ -1304,6 +1302,15 @@ class Mapster_Wordpress_Maps_Admin {
 				</div>
 			<?php 
         }
+    }
+
+    /**
+     * Ensuring default custom fields show
+     *
+     * @since    1.0.0
+     */
+    function acf_mapster_show_default_custom_fields() {
+        return false;
     }
 
 }

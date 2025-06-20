@@ -165,6 +165,7 @@ class Mapster_Wordpress_Maps_i18n {
 					</p>
 				', "mapster-wordpress-maps"),
 				"Live CSV Importer Instructions" => __('<p>To get the URL from your Google Sheet, you must go to File > Share > Publish to Web. Select "Comma-separate values (CSV)" from the dropdown under "Link" (by default, this says "Web Page"). Press Publish and you will recieve a URL.</p>', 'mapster-wordpress-maps'),
+				"Static CSV Importer Instructions" => __('<p>Ensure your CSV is in the proper format, and upload it here.</p>', 'mapster-wordpress-maps'),
 				"Spreadsheet CSV" => __('Enter CSV URL', "mapster-wordpress-maps"),
 				"Spreadsheet Verify" => __('Verify Spreadsheet', "mapster-wordpress-maps"),
 				"Spreadsheet Import" => __('Import Spreadsheet', "mapster-wordpress-maps"),
@@ -312,6 +313,7 @@ class Mapster_Wordpress_Maps_i18n {
 				"Mass Edit Lines" => __("Lines", "mapster-wordpress-maps"),
 				"Mass Edit Polygons" => __("Polygons", "mapster-wordpress-maps"),
 				"Mass Edit Popups" => __("Popups", "mapster-wordpress-maps"),
+				"Mass Edit Post Display" => __("Post Display Options", "mapster-wordpress-maps"),
 				"Mass Edit Button" => __("Mass Edit", "mapster-wordpress-maps"),
 				"Mass Edit Edited" => __("features edited!", "mapster-wordpress-maps"),
 			),

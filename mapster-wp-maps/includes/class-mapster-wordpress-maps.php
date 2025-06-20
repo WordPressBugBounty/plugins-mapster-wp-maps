@@ -219,6 +219,7 @@ class Mapster_Wordpress_Maps {
             10,
             2
         );
+        $this->loader->add_filter( 'acf/settings/remove_wp_meta_box', $plugin_admin, 'acf_mapster_show_default_custom_fields' );
     }
 
     /**

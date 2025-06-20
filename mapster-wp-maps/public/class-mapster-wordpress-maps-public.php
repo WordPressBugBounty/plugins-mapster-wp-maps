@@ -368,7 +368,7 @@ class Mapster_Wordpress_Maps_Public {
         // wp_register_style('mapster_map_searchbox_css', plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-searchbox-beta.css", array(), $this->version);
         wp_register_style(
             'mapster_map_geocoder_css',
-            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-geocoder-4.7.2.css",
+            plugin_dir_url( __FILE__ ) . "../admin/css/vendor/mapbox-gl-geocoder-5.0.3.css",
             array(),
             $this->version
         );
@@ -450,7 +450,7 @@ class Mapster_Wordpress_Maps_Public {
             wp_enqueue_style( "mapster_map_geocoder_css" );
             wp_enqueue_script(
                 'mapster_map_geocoder_js',
-                plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-geocoder-4.7.2.js",
+                plugin_dir_url( __FILE__ ) . "../admin/js/vendor/mapbox-gl-geocoder-5.0.3.js",
                 array($last_dependency),
                 $this->version
             );

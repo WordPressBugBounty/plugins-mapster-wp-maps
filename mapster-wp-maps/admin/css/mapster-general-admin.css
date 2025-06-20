@@ -181,10 +181,11 @@ body .acf-field.acf-field-62832f86ed5ce .acf-label {
 #acf-group_61636c62b003e .acf-field[data-name="pre_selected_categories"],
 #acf-group_61636c62b003e .acf-field[data-name="number_of_results"],
 #acf-group_61636c62b003e .acf-field[data-name="search_type"],
-.mapster-extra-form-fields [data-name="base_image"],
-#acf-group_6163732e0426e [data-name="base_image"],
 #acf-group_61636c62b003e .acf-field[data-name="show_all_languages"],
 #acf-group_6169ff23a6e6d .acf-field[data-name="use_custom_html"] .acf-input,
+#acf-group_6169ff23a6e6d .acf-field[data-name="center_on_open"] .acf-input,
+#acf-group_6169ff23a6e6d .acf-field[data-name="zoom_on_open"] .acf-input,
+#acf-group_6169ff23a6e6d .acf-field[data-name="open_as_modal_immediately"] .acf-input,
 #acf-group_61636c62b003e .acf-field[data-name="add_mobile_breakpoints"] .acf-input,
 #acf-group_61636c62b003e .acf-field[data-name="show_accuracy_circle"] .acf-input,
 #acf-group_61636c62b003e .acf-field[data-name="show_user_heading"] .acf-input,
@@ -212,6 +213,14 @@ body .acf-field.acf-field-62832f86ed5ce .acf-label {
 #acf-group_61636c62b003e .acf-field[data-name="map_tile_style_access_token"]
  {
   display : none;
+}
+
+.mapster-extra-form-fields [data-name="base_image"],
+#acf-group_6163732e0426e [data-name="base_image"],
+#acf-group_616377d62836b [data-name="base_image"],
+#acf-group_616379566202f [data-name="base_image"],
+#acf-group_6163d357655f4 .acf-field[data-name="modal_details"] .acf-input {
+  display: none;
 }
 
 /* Menu bar */

@@ -1,10 +1,10 @@
 === Mapster WP Maps ===
-Contributors: tempranova, mapster, freemius
+Contributors: tempranova, mapster
 Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.8
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -220,11 +220,28 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.17.0 =
+* Static CSV import added
+* Advanced Static CSV options
+* Adding default translucent borders to clusters
+* Changing default render order to put polygons on the bottom
+* Minor access token loading Mapbox issue
+* Base image input removed
+* Documentation major update
+* Adding post display options to CSV import
+* AutomatorWP bug fix
+* Fix to filter dropdown query click 
+* Improving CSV image import 
+* Adding lat, lng, and zoom to query string load parameters
+* Adding custom position translation to popup templates 
+* Bug fix with custom filter and sidebar popup 
+* Fix for default custom fields showing (ACF)
+* Upgrade Freemius version 
 = 1.16.0 =
 * Enhanced CSV upload with recurring scheduled CSV
 * Adding complete custom fields to enhanced CSV
-* Attribution control added to Maplibre 
-* Allowing rendering of linebreaks in labels 
+* Attribution control added to Maplibre
+* Allowing rendering of linebreaks in labels
 * Return glyphs to remote source
 = 1.15.0 =
 * Fix to full page height in some cases

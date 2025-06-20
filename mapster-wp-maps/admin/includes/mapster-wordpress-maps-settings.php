@@ -72,9 +72,9 @@ class Mapster_Wordpress_Maps_Admin_Settings {
         <div id="gl-js-import" class='nav-tab'><?php 
         echo $i18n->get_mapster_strings()['settings']['Import Data Modal GL JS Button'];
         ?></div>
-        <!-- <div id="mapster-static-csv" class='nav-tab'><?php 
-        // echo $i18n->get_mapster_strings()['settings']['Static CSV Button'];
-        ?></div> -->
+        <div id="mapster-static-csv" class='nav-tab'><?php 
+        echo $i18n->get_mapster_strings()['settings']['Static CSV Button'];
+        ?></div>
         <div id="mapster-live-csv" class='nav-tab'><?php 
         echo $i18n->get_mapster_strings()['settings']['Live CSV Button'];
         ?></div>
@@ -97,6 +97,12 @@ class Mapster_Wordpress_Maps_Admin_Settings {
         ?>
             </div>
             <div>
+              <?php 
+        echo $i18n->get_mapster_strings()['settings']['Static CSV Importer Instructions'];
+        ?>
+              <?php 
+        $this->mapster_static_csv_buttons();
+        ?>
             </div>
           </div>
         </div>
@@ -121,7 +127,7 @@ class Mapster_Wordpress_Maps_Admin_Settings {
         echo $i18n->get_mapster_strings()['settings']['Live CSV Importer Instructions'];
         ?>
              <?php 
-        $this->mapster_spreadsheet_buttons();
+        $this->mapster_live_csv_buttons();
         ?>
            </div>
          </div>
@@ -133,7 +139,11 @@ class Mapster_Wordpress_Maps_Admin_Settings {
         $i18n = new Mapster_Wordpress_Maps_i18n();
     }
 
-    public function mapster_spreadsheet_buttons() {
+    public function mapster_static_csv_buttons() {
+        $i18n = new Mapster_Wordpress_Maps_i18n();
+    }
+
+    public function mapster_live_csv_buttons() {
         $i18n = new Mapster_Wordpress_Maps_i18n();
     }
 
