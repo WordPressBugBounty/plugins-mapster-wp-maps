@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.8
-Stable tag: 1.17.0
+Stable tag: 1.18.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,7 @@ We integrate **MapLibre, Mapbox, and Google Maps**. You don't need an API key to
 
 Check out the extensive feature list below.
 
-🖳 If you're a developer, you can extend this plugin with custom code, too.
+💽 If you're a developer, you can extend this plugin with custom code, too.
 
 Happy mapping!
 
@@ -220,6 +220,18 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.18.0 =
+* Added thumbnails to Locations, Lines, and Polygons
+* Fixes to permalink jankiness
+* Improved validation Popup Template
+* Removing unneeded local fonts
+* Error checking for coordinate points Google Map
+* Bounds working with filter dropdown
+* Adding popup functionality to listing map
+* Adding better bounds reset to listing map
+* Bug fix for clicking when complex clusters 
+* Improvement in simulated clicks on layer features
+* Adding clustering polygons and clustering lines 
 = 1.17.0 =
 * Static CSV import added
 * Advanced Static CSV options
@@ -230,13 +242,13 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 * Documentation major update
 * Adding post display options to CSV import
 * AutomatorWP bug fix
-* Fix to filter dropdown query click 
-* Improving CSV image import 
+* Fix to filter dropdown query click
+* Improving CSV image import
 * Adding lat, lng, and zoom to query string load parameters
-* Adding custom position translation to popup templates 
-* Bug fix with custom filter and sidebar popup 
+* Adding custom position translation to popup templates
+* Bug fix with custom filter and sidebar popup
 * Fix for default custom fields showing (ACF)
-* Upgrade Freemius version 
+* Upgrade Freemius version
 = 1.16.0 =
 * Enhanced CSV upload with recurring scheduled CSV
 * Adding complete custom fields to enhanced CSV

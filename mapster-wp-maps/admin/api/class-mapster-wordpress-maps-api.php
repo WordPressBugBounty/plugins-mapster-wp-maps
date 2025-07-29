@@ -625,9 +625,9 @@ class Mapster_Wordpress_Maps_Admin_API {
                 }
             }
             ob_get_clean();
-            // return array("test" => $testdata);
+            // return json_decode('');
             // $ch = curl_init();
-            // curl_setopt($ch, CURLOPT_URL, "https://208.109.191.74/~fechpup/wp-json/mapster-wp-maps/map?id=17");
+            // curl_setopt($ch, CURLOPT_URL, "https://fruity-loop.com/wp-json/mapster-wp-maps/map?id=55104");
             // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
             // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
@@ -966,6 +966,12 @@ function mapster_getOnlyValues(  $object_id  ) {
                     $newImageData['width'] = $single_feature_data['data'][$key]['icon_properties']['icon-image']['width'];
                     $single_feature_data['data'][$key]['icon_properties']['icon-image'] = $newImageData;
                 }
+                // $hoverImageData = array();
+                // if($single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image']) {
+                //   $hoverImageData['id'] = $single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image']['id'];
+                //   $hoverImageData['url'] = $single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image']['url'];
+                //   $single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image'] = $hoverImageData;
+                // }
             }
         }
     }

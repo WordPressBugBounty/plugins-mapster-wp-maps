@@ -764,6 +764,7 @@ class Mapster_Wordpress_Maps_Admin {
             'menu_position'       => 15,
             'supports'            => array(
                 'title',
+                'thumbnail',
                 'editor',
                 'excerpt',
                 'custom-fields'
@@ -799,6 +800,7 @@ class Mapster_Wordpress_Maps_Admin {
             'menu_position'       => 15,
             'supports'            => array(
                 'title',
+                'thumbnail',
                 'editor',
                 'excerpt',
                 'custom-fields'
@@ -834,6 +836,7 @@ class Mapster_Wordpress_Maps_Admin {
             'menu_position'       => 15,
             'supports'            => array(
                 'title',
+                'thumbnail',
                 'editor',
                 'excerpt',
                 'custom-fields'
@@ -1311,6 +1314,28 @@ class Mapster_Wordpress_Maps_Admin {
      */
     function acf_mapster_show_default_custom_fields() {
         return false;
+    }
+
+    /**
+     * Custom field validation for ACF
+     *
+     * @since    1.0.0
+     */
+    function mapster_acf_custom_validation(
+        $valid,
+        $value,
+        $field,
+        $input
+    ) {
+        // title is required if field_deal1dealdiscount has a value
+        if ( isset( $_POST['acf']['field_616a60c610c96'] ) && $_POST['acf']['field_616a60c610c96'] == true ) {
+            // the other field has a value
+            // check value of this field
+            if ( empty( $value ) ) {
+                $valid = 'A Popup Template is required because you have enabled a Popup.';
+            }
+        }
+        return $valid;
     }
 
 }

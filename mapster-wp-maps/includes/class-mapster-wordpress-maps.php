@@ -182,6 +182,13 @@ class Mapster_Wordpress_Maps {
             2
         );
         $this->loader->add_filter(
+            'acf/validate_value/key=field_616a145a4f1eb',
+            $plugin_admin,
+            'mapster_acf_custom_validation',
+            20,
+            4
+        );
+        $this->loader->add_filter(
             'use_block_editor_for_post_type',
             $plugin_admin,
             'mapster_maps_disable_gutenberg',

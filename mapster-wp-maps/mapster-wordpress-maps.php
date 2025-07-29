@@ -9,14 +9,14 @@
  * that starts the plugin.
  *
  * @link              https://mapster.me
- * @since             1.17.0
+ * @since             1.18.0
  * @package           Mapster_Wordpress_Maps
  *
  * @wordpress-plugin
  * Plugin Name:       Mapster WP Maps
  * Plugin URI:        https://wpmaps.mapster.me/
  * Description:       Mapster WP Maps is the smoothest, easiest way to make maps for your site. No API keys required.
- * Version:           1.17.0
+ * Version:           1.18.0
  * Author:            Mapster Technology Inc
  * Author URI:        https://mapster.me
  * License:           GPL-2.0+
@@ -43,7 +43,7 @@ For version numbers, update in this file at top and in definition; update in REA
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '1.17.0' );
+define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '1.18.0' );
 define( 'MAPSTER_LOCAL_TESTING', ( get_bloginfo( 'name' ) == "Mapster Wordpress Maps Development" ? true : false ) );
 /**
  * Freemius loading and integration
@@ -109,6 +109,7 @@ if ( function_exists( 'mwm_fs' ) ) {
     function activate_mapster_wordpress_maps() {
         require_once plugin_dir_path( __FILE__ ) . 'includes/class-mapster-wordpress-maps-activator.php';
         Mapster_Wordpress_Maps_Activator::activate();
+        flush_rewrite_rules();
     }
 
     /**
@@ -118,6 +119,7 @@ if ( function_exists( 'mwm_fs' ) ) {
     function deactivate_mapster_wordpress_maps() {
         require_once plugin_dir_path( __FILE__ ) . 'includes/class-mapster-wordpress-maps-deactivator.php';
         Mapster_Wordpress_Maps_Deactivator::deactivate();
+        flush_rewrite_rules();
     }
 
     register_activation_hook( __FILE__, 'activate_mapster_wordpress_maps' );
