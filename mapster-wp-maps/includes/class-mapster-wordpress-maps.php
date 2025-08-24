@@ -189,6 +189,34 @@ class Mapster_Wordpress_Maps {
             4
         );
         $this->loader->add_filter(
+            'acf/validate_value/key=field_6169fddd6e650',
+            $plugin_admin,
+            'mapster_acf_custom_validation_urls',
+            20,
+            4
+        );
+        $this->loader->add_filter(
+            'acf/update_value/key=field_616a02f694f0b',
+            $plugin_admin,
+            'mapster_acf_custom_sanitization_previews',
+            10,
+            1
+        );
+        $this->loader->add_filter(
+            'acf/update_value/key=field_616a031894f0d',
+            $plugin_admin,
+            'mapster_acf_custom_sanitization_previews',
+            10,
+            1
+        );
+        $this->loader->add_filter(
+            'acf/update_value/key=field_616a0739c7606',
+            $plugin_admin,
+            'mapster_acf_custom_sanitization_previews',
+            10,
+            1
+        );
+        $this->loader->add_filter(
             'use_block_editor_for_post_type',
             $plugin_admin,
             'mapster_maps_disable_gutenberg',

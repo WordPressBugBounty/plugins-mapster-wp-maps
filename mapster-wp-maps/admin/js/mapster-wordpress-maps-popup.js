@@ -78,7 +78,7 @@
         padding: 0;
       }
       #mapster-popup .map-popup-image {
-        background-image : url(https://via.placeholder.com/150x50);
+        background-image : url(https://placehold.co/150x50);
         background-position : center center;
         background-size: cover;
         height : ${css.image_height}px;

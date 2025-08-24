@@ -184,6 +184,13 @@
 				source : 'feature'
 			});
 		}
+		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-pattern') {
+			map.addLayer({
+				id : 'feature',
+				type : 'fill',
+				source : 'feature'
+			});
+		}
 		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-image') {
 			map.addLayer({
 				id : 'feature',
@@ -719,11 +726,16 @@
 			var colorVal = $('.acf-field[data-name="color"]').find('input').val()
 			var opacityVal = $('.acf-field[data-name="opacity"]').find('input').val()
 			var outlineColorVal = $('.acf-field[data-name="outline-color"]').find('input').val()
+			var patternVal = $('.acf-field[data-name="pattern"]').find('img').attr('src')
+			if(patternVal && patternVal.indexOf('http') > -1) {
+				addNewIcon(patternVal, () => {}, patternVal);
+			}
 			const polygonValues = {
 				paint : {
 					color : colorVal && colorVal !== '' ? colorVal : '#000',
 					opacity : opacityVal && opacityVal !== '' ? parseFloat(opacityVal)/100 : 1,
-					'outline-color' : outlineColorVal && outlineColorVal !== '' ? outlineColorVal : 'rgba(0, 0, 0, 0)'
+					'outline-color' : outlineColorVal && outlineColorVal !== '' ? outlineColorVal : 'rgba(0, 0, 0, 0)',
+					pattern : patternVal && patternVal.indexOf('http') > -1 ? patternVal : null
 				}
 			}
 			return polygonValues;
@@ -755,6 +767,19 @@
 			}
 			return polygonValues;
 		}
+
+		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-pattern') {
+			var patternVal = $('.acf-field[data-name="pattern"]').find('img').attr('src')
+			if(patternVal && patternVal.indexOf('http') > -1) {
+				addNewIcon(patternVal, () => {}, patternVal);
+			}
+			const polygonValues = {
+				paint : {
+					pattern : patternVal && patternVal.indexOf('http') > -1 ? patternVal : null
+				}
+			}
+			return polygonValues;
+		}
 	}
 
 	function getLayerType() {
@@ -773,12 +798,15 @@
 		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-extrusion') {
 			return 'fill-extrusion-';
 		}
+		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-pattern') {
+			return 'fill-';
+		}
 		if(getGeographyType() === 'polygon' && getPolygonType() === 'fill-image') {
 			return 'fill-';
 		}
 	}
 
-	function addNewIcon(iconSrc, callback) {
+	function addNewIcon(iconSrc, callback, imageName = "icon-image-location") {
 		if(!iconSrc) {
 			callback()
 		}
@@ -790,7 +818,7 @@
 		const img = new Image();
 		img.src = iconSrc;
 		img.addEventListener("load", () => {
-			addIconToMap(map, img, callback);
+			addIconToMap(map, img, imageName, callback);
 		});
 
 		// map.loadImage(iconSrc, (err, img) => {
@@ -798,21 +826,21 @@
 		// })
 	}
 
-	function addIconToMap(map, img, callback) {
+	function addIconToMap(map, img, imageName, callback) {
 		if(!map.loaded()) {
 			map.once('idle', () => {
-				if(map.hasImage('icon-image-location')) {
-					map.updateImage('icon-image-location', img);
+				if(map.hasImage(imageName)) {
+					map.updateImage(imageName, img);
 				} else {
-					map.addImage('icon-image-location', img)
+					map.addImage(imageName, img)
 				}
 				callback()
 			})
 		} else {
-			if(map.hasImage('icon-image-location')) {
-				map.updateImage('icon-image-location', img);
+			if(map.hasImage(imageName)) {
+				map.updateImage(imageName, img);
 			} else {
-				map.addImage('icon-image-location', img)
+				map.addImage(imageName, img)
 			}
 			callback()
 		}

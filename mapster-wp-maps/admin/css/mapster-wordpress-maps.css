@@ -294,6 +294,22 @@
 .mapster-list-control .mapster-category-listing ul > li {
   padding-left: 10px;
 }
+.mapster-list-control .mapster-list-hide-show {
+  position: absolute;
+  margin-top: -18px;
+  margin-left: -18px;
+  background: white;
+  box-shadow: 2px 2px 10px #ccc;
+  border-radius: 10px;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 10px;
+}
+.mapster-list-control .mapster-list-hide-show span {
+  font-size: 18px;
+  margin-top: 1px;
+  width: 16px;
+}
 
 /* download control */
 .mapster-download-control {

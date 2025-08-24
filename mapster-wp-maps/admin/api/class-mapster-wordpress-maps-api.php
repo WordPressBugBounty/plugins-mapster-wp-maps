@@ -300,6 +300,8 @@ class Mapster_Wordpress_Maps_Admin_API {
             $response = array();
             $idsArray = json_decode( $params['ids'] );
             $catsArray = json_decode( $params['categories'] );
+            $customArray = json_decode( $params['custom'] );
+            $customCatsArray = json_decode( $params['custom_cats'] );
             if ( mapster_can_be_looped( $idsArray ) ) {
                 foreach ( $idsArray as $id ) {
                     $thisResponse = mapster_getOnlyValues( $id );
@@ -331,6 +333,45 @@ class Mapster_Wordpress_Maps_Admin_API {
                             $the_query->the_post();
                             $thisResponse = mapster_getOnlyValues( get_the_ID() );
                             array_push( $response, $thisResponse );
+                        }
+                    }
+                }
+            }
+            // Check for custom additions
+            if ( mapster_can_be_looped( $customArray ) ) {
+                foreach ( $customArray as $id ) {
+                    $thisResponse = mapster_getOnlyValues( $id );
+                    $customData = mapster_organizeCustomData( $thisResponse );
+                    if ( $customData ) {
+                        array_push( $response, $customData );
+                    }
+                }
+            }
+            if ( mapster_can_be_looped( $customCatsArray ) ) {
+                if ( count( $customCatsArray ) > 0 ) {
+                    foreach ( $customCatsArray as $customCat ) {
+                        $term = get_term( $customCat );
+                        $args = array(
+                            'post_type'      => "any",
+                            'tax_query'      => array(array(
+                                "taxonomy"         => $term->taxonomy,
+                                "field"            => "term_id",
+                                "terms"            => $customCat,
+                                "include_children" => false,
+                            )),
+                            'post_status'    => 'publish',
+                            'posts_per_page' => -1,
+                        );
+                        $the_query = new WP_Query($args);
+                        if ( $the_query->have_posts() ) {
+                            while ( $the_query->have_posts() ) {
+                                $the_query->the_post();
+                                $thisResponse = mapster_getOnlyValues( get_the_ID() );
+                                $customData = mapster_organizeCustomData( $thisResponse );
+                                if ( $customData ) {
+                                    array_push( $response, $customData );
+                                }
+                            }
                         }
                     }
                 }
@@ -514,28 +555,34 @@ class Mapster_Wordpress_Maps_Admin_API {
                     }
                     // Check for category additions
                     $categories = get_field( 'add_by_category', $post_id );
+                    $customCategories = get_field( 'add_by_custom_category', $post_id );
+                    $tax_queries = array(
+                        "relation" => "OR",
+                    );
+                    $all_posts = array();
+                    $post_ids_added = array();
                     if ( mapster_can_be_looped( $categories ) ) {
                         if ( count( $categories ) > 0 ) {
-                            $all_posts = array();
-                            $post_ids_added = array();
+                            if ( mapster_can_be_looped( $categories ) ) {
+                                array_push( $tax_queries, array(
+                                    "taxonomy"         => "wp-map-category",
+                                    "field"            => "term_id",
+                                    "terms"            => $categories,
+                                    "include_children" => false,
+                                ) );
+                            }
+                        }
+                    }
+                    if ( mapster_can_be_looped( $tax_queries ) ) {
+                        if ( count( $tax_queries ) > 1 ) {
                             if ( get_field( 'submission_administration_show_all_languages_on_one_map', $post_id, true ) && is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
                                 $current_lang = apply_filters( 'wpml_current_language', NULL );
                                 $languages = apply_filters( 'wpml_active_languages', NULL, 'orderby=id&order=desc' );
                                 foreach ( $languages as $language ) {
                                     do_action( 'wpml_switch_language', $language["language_code"] );
                                     $args = array(
-                                        'post_type'      => array(
-                                            'mapster-wp-user-sub',
-                                            'mapster-wp-location',
-                                            'mapster-wp-polygon',
-                                            'mapster-wp-line'
-                                        ),
-                                        'tax_query'      => array(array(
-                                            "taxonomy"         => "wp-map-category",
-                                            "field"            => "term_id",
-                                            "terms"            => $categories,
-                                            "include_children" => false,
-                                        )),
+                                        'post_type'      => "any",
+                                        'tax_query'      => $tax_queries,
                                         'post_status'    => 'publish',
                                         'posts_per_page' => -1,
                                     );
@@ -556,18 +603,8 @@ class Mapster_Wordpress_Maps_Admin_API {
                                 do_action( 'wpml_switch_language', $current_lang["language_code"] );
                             } else {
                                 $args = array(
-                                    'post_type'      => array(
-                                        'mapster-wp-user-sub',
-                                        'mapster-wp-location',
-                                        'mapster-wp-polygon',
-                                        'mapster-wp-line'
-                                    ),
-                                    'tax_query'      => array(array(
-                                        "taxonomy"         => "wp-map-category",
-                                        "field"            => "term_id",
-                                        "terms"            => $categories,
-                                        "include_children" => false,
-                                    )),
+                                    'post_type'      => "any",
+                                    'tax_query'      => $tax_queries,
                                     'post_status'    => 'publish',
                                     'posts_per_page' => -1,
                                 );
@@ -583,38 +620,45 @@ class Mapster_Wordpress_Maps_Admin_API {
                                 }
                             }
                             foreach ( $all_posts as $post ) {
-                                if ( $post['post_type'] == 'mapster-wp-location' || $post['post_type'] == 'mapster-wp-user-sub' ) {
-                                    $dataToAdd = mapster_getOnlyValues( $post['post_id'] );
-                                    if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                        if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                            array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                            array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                $initialData = mapster_getOnlyValues( $post['post_id'] );
+                                $dataToAdd = mapster_organizeCustomData( $initialData );
+                                if ( $dataToAdd ) {
+                                    if ( isset( $dataToAdd['data']['location'] ) ) {
+                                        if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                            if ( $dataToAdd['data']['popup_style'] ) {
+                                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                                }
+                                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                            }
                                         }
-                                        $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                        array_push( $minimized_location_data, $dataToAdd );
                                     }
-                                    array_push( $minimized_location_data, $dataToAdd );
-                                }
-                                if ( $post['post_type'] == 'mapster-wp-line' ) {
-                                    $dataToAdd = mapster_getOnlyValues( $post['post_id'] );
-                                    if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                        if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                            array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                            array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                    if ( isset( $dataToAdd['data']['line'] ) ) {
+                                        if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                            if ( $dataToAdd['data']['popup_style'] ) {
+                                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                                }
+                                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                            }
                                         }
-                                        $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                        array_push( $minimized_line_data, $dataToAdd );
                                     }
-                                    array_push( $minimized_line_data, $dataToAdd );
-                                }
-                                if ( $post['post_type'] == 'mapster-wp-polygon' ) {
-                                    $dataToAdd = mapster_getOnlyValues( $post['post_id'] );
-                                    if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                        if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                            array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                            array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                    if ( isset( $dataToAdd['data']['polygon'] ) ) {
+                                        if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                            if ( $dataToAdd['data']['popup_style'] ) {
+                                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                                }
+                                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                            }
                                         }
-                                        $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                        array_push( $minimized_polygon_data, $dataToAdd );
                                     }
-                                    array_push( $minimized_polygon_data, $dataToAdd );
                                 }
                             }
                         }
@@ -627,7 +671,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             ob_get_clean();
             // return json_decode('');
             // $ch = curl_init();
-            // curl_setopt($ch, CURLOPT_URL, "https://fruity-loop.com/wp-json/mapster-wp-maps/map?id=55104");
+            // curl_setopt($ch, CURLOPT_URL, "https://www.ecobouchon.fr/wp-json/mapster-wp-maps/map?id=16025");
             // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
             // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
@@ -651,6 +695,43 @@ class Mapster_Wordpress_Maps_Admin_API {
 
     }
 
+}
+
+function mapster_organizeCustomData(  $dataToAdd  ) {
+    $customDataToAdd = $dataToAdd;
+    if ( isset( $dataToAdd['data'] ) ) {
+        $geographic_data_key = false;
+        if ( mapster_can_be_looped( $dataToAdd['data'] ) ) {
+            foreach ( $dataToAdd['data'] as $key => $data_field ) {
+                if ( is_array( $data_field ) && array_key_exists( 'type', $data_field ) ) {
+                    if ( isset( $data_field['type'] ) && isset( $data_field['coordinates'] ) ) {
+                        $geographic_data_key = $key;
+                    }
+                }
+            }
+            if ( isset( $dataToAdd['data'][$geographic_data_key] ) && isset( $dataToAdd['data'][$geographic_data_key]['type'] ) ) {
+                if ( str_contains( $dataToAdd['data'][$geographic_data_key]['type'], "Point" ) ) {
+                    $customDataToAdd['data']['location'] = $dataToAdd['data'][$geographic_data_key];
+                }
+                if ( str_contains( $dataToAdd['data'][$geographic_data_key]['type'], "Line" ) ) {
+                    $customDataToAdd['data']['line'] = $dataToAdd['data'][$geographic_data_key];
+                }
+                if ( str_contains( $dataToAdd['data'][$geographic_data_key]['type'], "Polygon" ) ) {
+                    $customDataToAdd['data']['polygon'] = $dataToAdd['data'][$geographic_data_key];
+                }
+                if ( $geographic_data_key !== "location" && $geographic_data_key !== "line" && $geographic_data_key !== "polygon" ) {
+                    unset($customDataToAdd['data'][$geographic_data_key]);
+                }
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    return $customDataToAdd;
 }
 
 function dynamic_popup_replace(  $data  ) {
@@ -945,14 +1026,14 @@ function mapster_getOnlyValues(  $object_id  ) {
                 if ( $single_feature_data['data'][$key]['featured_image'] ) {
                     $newImageData = array();
                     $newImageData['id'] = $single_feature_data['data'][$key]['featured_image']['id'];
-                    $image_thumbnail_size = ( $single_feature_data['data']['popup_style']['image_thumbnail_size'] ? $single_feature_data['data']['popup_style']['image_thumbnail_size'] : 'medium' );
+                    $image_thumbnail_size = ( isset( $single_feature_data['data']['popup_style']['image_thumbnail_size'] ) ? $single_feature_data['data']['popup_style']['image_thumbnail_size'] : 'medium' );
                     $newImageData['url'] = wp_get_attachment_image_url( $newImageData['id'], $image_thumbnail_size );
                     $single_feature_data['data'][$key]['featured_image'] = $newImageData;
                 }
             }
             if ( $key == 'images' ) {
                 foreach ( $field_object_data[$key]['value'] as $image ) {
-                    $image_thumbnail_size = ( $single_feature_data['data']['popup_style']['image_thumbnail_size'] ? $single_feature_data['data']['popup_style']['image_thumbnail_size'] : 'medium' );
+                    $image_thumbnail_size = ( isset( $single_feature_data['data']['popup_style']['image_thumbnail_size'] ) ? $single_feature_data['data']['popup_style']['image_thumbnail_size'] : 'medium' );
                     $thisAttachment = wp_get_attachment_image_src( $image['id'], $image_thumbnail_size );
                     array_push( $single_feature_data['data']['popup']['images'], $thisAttachment[0] );
                 }

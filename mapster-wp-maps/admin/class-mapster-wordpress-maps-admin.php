@@ -1338,4 +1338,125 @@ class Mapster_Wordpress_Maps_Admin {
         return $valid;
     }
 
+    /**
+     * Custom field validation for ACF URLs
+     *
+     * @since    1.0.0
+     */
+    function mapster_acf_custom_validation_urls(
+        $valid,
+        $value,
+        $field,
+        $input
+    ) {
+        // If already invalid from another check, bail out
+        if ( $valid !== true ) {
+            return $valid;
+        }
+        $value = trim( $value );
+        // Allow plain numbers (phone-style input)
+        if ( preg_match( '/^\\+?[0-9\\s\\-\\(\\)]+$/', $value ) ) {
+            return $valid;
+            // passes
+        }
+        // Allowed URL protocols
+        $allowed_protocols = [
+            'http',
+            'https',
+            'mailto',
+            'tel'
+        ];
+        $safe_value = esc_url_raw( $value, $allowed_protocols );
+        // If esc_url_raw() stripped it, the protocol wasn’t allowed
+        if ( $safe_value !== $value ) {
+            return 'Invalid link: only http, https, mailto, tel, or a plain phone number are allowed.';
+        }
+        return $valid;
+    }
+
+    /**
+     * Custom field sanitization for ACF Preview Fields
+     *
+     * @since    1.0.0
+     */
+    function mapster_acf_custom_sanitization_previews( $value ) {
+        $allowed_tags = [
+            'a'      => [
+                'href'   => true,
+                'title'  => true,
+                'target' => true,
+                'rel'    => true,
+            ],
+            'p'      => [],
+            'br'     => [],
+            'strong' => [],
+            'em'     => [],
+            'b'      => [],
+            'i'      => [],
+            'ul'     => [],
+            'ol'     => [],
+            'li'     => [],
+            'img'    => [
+                'src'    => true,
+                'alt'    => true,
+                'title'  => true,
+                'width'  => true,
+                'height' => true,
+            ],
+            'span'   => [
+                'class' => true,
+                'style' => true,
+            ],
+            'div'    => [
+                'class' => true,
+                'style' => true,
+            ],
+            'h1'     => [],
+            'h2'     => [],
+            'h3'     => [],
+            'h4'     => [],
+            'h5'     => [],
+            'h6'     => [],
+        ];
+        return wp_kses( $value, $allowed_tags );
+    }
+
+    /**
+     * Custom field sanitization for ACF Preview Fields
+     *
+     * @since    1.0.0
+     */
+    function mapster_override_taxonomy_query( $args, $field, $post_id ) {
+        // Instead of a single taxonomy, fetch all public taxonomies
+        $taxonomies = get_taxonomies( [
+            'public' => true,
+        ], 'names' );
+        unset($taxonomies['wp-map-category']);
+        $args['taxonomy'] = $taxonomies;
+        return $args;
+    }
+
+    /**
+     * Custom field sanitization for ACF Preview Fields
+     *
+     * @since    1.0.0
+     */
+    function mapster_results_taxonomy_query(
+        $title,
+        $term,
+        $field,
+        $post_id
+    ) {
+        // Instead of injecting <strong>, prepend group key used by Select2
+        $taxonomy = get_taxonomy( $term->taxonomy );
+        if ( $taxonomy ) {
+            // ACF Select2 supports optgroup-style grouping when result items have "group" keys
+            $title = $term->name;
+            // plain name
+            $term->group = $taxonomy->labels->singular_name;
+            // tell ACF to group by taxonomy
+        }
+        return $title;
+    }
+
 }

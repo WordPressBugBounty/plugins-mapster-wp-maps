@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 6.8
-Stable tag: 1.18.0
+Stable tag: 1.19.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -220,6 +220,14 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 1.19.0 =
+* Updating ACF to 6.4.3
+* Adding selection by CPT category
+* Fix for Store Locator missing hours 
+* Adding basic polygon patterns 
+* Wordfence vulnerability patches 
+* Geocoder able to embed on separate page 
+* Fixing image thumbnail in popup preview
 = 1.18.0 =
 * Added thumbnails to Locations, Lines, and Polygons
 * Fixes to permalink jankiness
