@@ -433,6 +433,13 @@ class Mapster_Wordpress_Maps_Admin {
             $last_dependency = 'mapster_map_' . $map_provider;
         }
         wp_enqueue_script(
+            'mapster_map_purify_js',
+            plugin_dir_url( __FILE__ ) . "../admin/js/vendor/purify.min.js",
+            array($last_dependency),
+            $this->version
+        );
+        $last_dependency = 'mapster_map_purify_js';
+        wp_enqueue_script(
             'mapster_map_sortable_js',
             plugin_dir_url( __FILE__ ) . "../admin/js/vendor/sortable.min.js",
             array($last_dependency),

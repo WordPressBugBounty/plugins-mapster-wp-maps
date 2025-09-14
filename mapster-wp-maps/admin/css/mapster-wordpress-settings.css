@@ -186,3 +186,8 @@ body .acf-fields > .acf-tab-wrap {
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+
+.acf-field-623793d30cdd0 .acf-field[data-name="spatial_api"] {
+  display: none;
+}

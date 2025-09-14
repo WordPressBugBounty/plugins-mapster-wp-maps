@@ -154,22 +154,22 @@
 					replaceHTMLValues(html.html_editor, content) :
 	        `<div id="mapster-popup" class="map-popup-background ${sanitize(layout.popup_class)}">
 	          ${layout.enable_header ?
-	            `<div class="map-popup-header">
+	            DOMPurify.sanitize(`<div class="map-popup-header">
 	              <h2>${content.header_text_preview}</h2>
-	            </div>`
+	            </div>`)
 	          : ''}
 	          ${layout.enable_image ?
-	            `<div class="map-popup-image"></div>`
+	            DOMPurify.sanitize(`<div class="map-popup-image"></div>`)
 	          : ''}
 	          ${layout.enable_body ?
-	            `<div class="map-popup-body">
+	            DOMPurify.sanitize(`<div class="map-popup-body">
 	              <p>${content.content_preview}
-	            </div>`
+	            </div>`)
 	          : ''}
 	          ${layout.enable_footer ?
-	            `<div class="map-popup-footer">
+	            DOMPurify.sanitize(`<div class="map-popup-footer">
 	              <button class="map-popup-footer-button">${content.button_text_preview}</button>
-	            </div>`
+	            </div>`)
 	          : ''}
 	        </div>`
 				}

@@ -430,6 +430,13 @@ class Mapster_Wordpress_Maps_Public {
             $last_dependency = 'mapster_map_' . $map_provider;
         }
         wp_enqueue_script(
+            'mapster_map_purify_js',
+            plugin_dir_url( __FILE__ ) . "../admin/js/vendor/purify.min.js",
+            array($last_dependency),
+            $this->version
+        );
+        $last_dependency = 'mapster_map_purify_js';
+        wp_enqueue_script(
             'mapster_map_turf',
             plugin_dir_url( __FILE__ ) . "../admin/js/vendor/custom-turf.js",
             array($last_dependency),
