@@ -196,6 +196,13 @@ class Mapster_Wordpress_Maps {
             4
         );
         $this->loader->add_filter(
+            'acf/validate_value/key=field_61ca465c6f329',
+            $plugin_admin,
+            'mapster_acf_custom_validation_urls',
+            20,
+            4
+        );
+        $this->loader->add_filter(
             'acf/update_value/key=field_616a02f694f0b',
             $plugin_admin,
             'mapster_acf_custom_sanitization_previews',
