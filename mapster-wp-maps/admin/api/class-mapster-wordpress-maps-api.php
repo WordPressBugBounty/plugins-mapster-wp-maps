@@ -600,7 +600,13 @@ class Mapster_Wordpress_Maps_Admin_API {
                                         }
                                     }
                                 }
-                                do_action( 'wpml_switch_language', $current_lang["language_code"] );
+                                $language_code = "";
+                                if ( is_string( $current_lang ) ) {
+                                    $language_code = $current_lang;
+                                } else {
+                                    $language_code = $current_lang["language_code"];
+                                }
+                                do_action( 'wpml_switch_language', $language_code );
                             } else {
                                 $args = array(
                                     'post_type'      => "any",
@@ -670,14 +676,14 @@ class Mapster_Wordpress_Maps_Admin_API {
             }
             ob_get_clean();
             // return json_decode('');
-            // $ch = curl_init();
-            // curl_setopt($ch, CURLOPT_URL, "https://www.ecobouchon.fr/wp-json/mapster-wp-maps/map?id=16025");
-            // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-            // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-            // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            //    $ch = curl_init();
+            //    curl_setopt($ch, CURLOPT_URL, "https://ycik.co.za/staging/wp-json/mapster-wp-maps/map?id=4309");
+            //    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            //    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+            //    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+            //    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             // $response = curl_exec($ch);
-            // return json_decode($response);
+            //    return json_decode($response);
             $toReturn = array(
                 'id'                => $post_id,
                 'cats'              => $categories,

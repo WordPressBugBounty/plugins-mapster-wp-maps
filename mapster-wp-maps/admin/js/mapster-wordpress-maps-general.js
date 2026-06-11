@@ -89,7 +89,7 @@
 		post_data.forEach(post => {
 			let postCopy = JSON.parse(JSON.stringify(post))
 			for(let field in postCopy) {
-				if(!$(CSS.escape(`#mapster-post-field-${field}`)).is(":checked")) {
+				if(!$(jQuery(`#mapster-post-field-${field}`)).is(":checked")) {
 					delete postCopy[field];
 				}
 			}

@@ -76,6 +76,7 @@ class Mapster_Wordpress_Maps_Admin {
             }
         }
         include_once plugin_dir_path( __FILE__ ) . '../includes/acf-mapster-map/acf-mapster-map.php';
+        include_once plugin_dir_path( __FILE__ ) . '../includes/acf-multiple-taxonomy/acf-multiple-taxonomy.php';
         if ( !class_exists( 'acf_plugin_photo_gallery' ) ) {
             if ( !is_plugin_active( 'navz-photo-gallery/navz-photo-gallery.php' ) ) {
                 include_once plugin_dir_path( __FILE__ ) . '../includes/acf-photo-gallery-field/navz-photo-gallery.php';
@@ -94,6 +95,9 @@ class Mapster_Wordpress_Maps_Admin {
     public function enqueue_styles() {
         wp_enqueue_style( 'wp-pointer' );
         $current_screen = get_current_screen();
+        if ( $current_screen->id == "edit-mapster-wp-user-sub" || $current_screen->id == "edit-mapster-wp-popup" || $current_screen->id == "edit-mapster-wp-map" || $current_screen->id == "edit-mapster-wp-location" || $current_screen->id == "edit-mapster-wp-line" || $current_screen->id == "edit-mapster-wp-polygon" ) {
+            wp_enqueue_style( 'thickbox' );
+        }
         if ( $current_screen->id == "mapster-wp-map_page_wordpress-maps-settings" ) {
             wp_enqueue_style(
                 'mapster_map_settings',
@@ -325,6 +329,7 @@ class Mapster_Wordpress_Maps_Admin {
             );
         }
         if ( $current_screen->id == "edit-mapster-wp-user-sub" || $current_screen->id == "edit-mapster-wp-popup" || $current_screen->id == "edit-mapster-wp-map" || $current_screen->id == "edit-mapster-wp-location" || $current_screen->id == "edit-mapster-wp-line" || $current_screen->id == "edit-mapster-wp-polygon" ) {
+            wp_enqueue_script( 'thickbox' );
             wp_register_script(
                 $this->plugin_name . '-general',
                 plugin_dir_url( __FILE__ ) . '/js/mapster-wordpress-maps-general.js',
