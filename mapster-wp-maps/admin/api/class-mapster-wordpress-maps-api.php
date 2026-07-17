@@ -393,9 +393,14 @@ class Mapster_Wordpress_Maps_Admin_API {
         ) );
         function mapster_wp_maps_get_feature(  $params  ) {
             $post_id = intval( $params['id'] );
-            $thisResponse = mapster_getOnlyValues( $post_id );
-            ob_get_clean();
-            return $thisResponse;
+            if ( $post_id ) {
+                if ( get_post_status( $post_id ) == "publish" ) {
+                    $thisResponse = mapster_getOnlyValues( $post_id );
+                    ob_get_clean();
+                    return $thisResponse;
+                }
+            }
+            return false;
         }
 
     }

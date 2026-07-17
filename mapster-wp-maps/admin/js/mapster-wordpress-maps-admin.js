@@ -199,11 +199,14 @@
 			} else {
 				if(thisType.indexOf('access_token') > -1) {
 					acfAccessTokenField.val(thisSlug)
+					acfAccessTokenField.$input().trigger('change');
 				} else {
 					if($('.acf-field[data-name="map_tile_style_access_token"]').hasClass("acf-hidden")) {
-						acfNoAccessTokenField.val(thisSlug)
+            acfNoAccessTokenField.val(thisSlug)
+						acfNoAccessTokenField.$input().trigger('change');
 					} else {
-						acfAccessTokenField.val(thisSlug)
+            acfAccessTokenField.val(thisSlug)
+						acfAccessTokenField.$input().trigger('change');
 					}
 				}
 				$('#mapster-current-style').html($(this).text())
