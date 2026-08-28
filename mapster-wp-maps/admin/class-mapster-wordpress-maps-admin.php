@@ -88,6 +88,46 @@ class Mapster_Wordpress_Maps_Admin {
     }
 
     /**
+     * Upgrades with 2.0.0 update
+     *
+     * @since    1.0.0
+     */
+    public function mapster_200_update() {
+        if ( MAPSTER_WORDPRESS_MAPS_VERSION ) {
+            $exploded_version = explode( ".", MAPSTER_WORDPRESS_MAPS_VERSION );
+            if ( $exploded_version > 1 ) {
+                $version_upgraded = get_option( 'mapster_200_updated' );
+                update_option( 'mapster_200_updated', true );
+                if ( !$version_upgraded ) {
+                    // Run cache update
+                    $args = array(
+                        "posts_per_page" => -1,
+                        "post_type"      => "mapster-wp-map",
+                        'meta_query'     => array(array(
+                            'key'     => 'cache_use_cache',
+                            'value'   => '1',
+                            'compare' => '=',
+                        )),
+                    );
+                    $the_query = new WP_Query($args);
+                    if ( $the_query->have_posts() ) {
+                        while ( $the_query->have_posts() ) {
+                            $the_query->the_post();
+                            if ( class_exists( 'Mapster_Wordpress_Maps_Pro_Admin_API' ) ) {
+                                // var_dump("RUN CACHE");
+                                $obj = new Mapster_Wordpress_Maps_Pro_Admin_API();
+                                $obj->mapster_wp_maps_create_cache( get_the_ID() );
+                            }
+                        }
+                        wp_reset_postdata();
+                    }
+                    // Mark update
+                }
+            }
+        }
+    }
+
+    /**
      * Register the stylesheets for the admin area.
      *
      * @since    1.0.0
@@ -194,8 +234,8 @@ class Mapster_Wordpress_Maps_Admin {
                 }
             }
             $last_dependency = 'jquery';
-            if ( MAPSTER_LOCAL_TESTING ) {
-                $this->mapster_wordpress_maps_script_loading_dev(
+            if ( MAPSTER_LOCAL_TESTING && isset( $_GET['legacy'] ) ) {
+                $this->enqueue_legacy_dev_scripts(
                     $last_dependency,
                     $map_provider,
                     $settings_page_id,
@@ -206,53 +246,7 @@ class Mapster_Wordpress_Maps_Admin {
                     $adminInjection
                 );
             } else {
-                $scripts_to_load = "";
-                if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
-                    $scripts_to_load = "maplibre-geocoding-mwp";
-                }
-                if ( $map_provider === 'mapbox' ) {
-                    $scripts_to_load = "mapbox-geocoding-mwp";
-                }
-                if ( $map_provider === 'google-maps' ) {
-                    $google_api_key = get_field( 'google_maps_api_key', $settings_page_id );
-                    wp_enqueue_script(
-                        'mapster_map_' . $map_provider,
-                        "https://maps.googleapis.com/maps/api/js?key=" . $google_api_key . "&libraries=places",
-                        array($last_dependency),
-                        $this->version
-                    );
-                    $last_dependency = 'mapster_map_' . $map_provider;
-                    $scripts_to_load = "google-mwp";
-                }
-                if ( $store_locator_enabled ) {
-                    wp_enqueue_style( 'mapster_map_store_locator' );
-                }
-                wp_register_script(
-                    'mapster_map_admin_js',
-                    plugin_dir_url( __FILE__ ) . "js/dist/mwp-admin.js",
-                    array('jquery'),
-                    $this->version,
-                    true
-                );
-                wp_localize_script( 'mapster_map_admin_js', 'mapster_admin', $adminInjection );
-                wp_enqueue_script( 'mapster_map_admin_js' );
-                wp_register_script(
-                    $this->plugin_name,
-                    plugin_dir_url( __FILE__ ) . '../admin/js/dist/compiled/' . $scripts_to_load . '.js',
-                    array($last_dependency),
-                    $this->version,
-                    true
-                );
-                wp_localize_script( $this->plugin_name, 'mapster_params', $injectedParams );
-                wp_enqueue_script( $this->plugin_name );
-                wp_register_style(
-                    $this->plugin_name,
-                    plugin_dir_url( __FILE__ ) . '../public/css/dist/' . $scripts_to_load . '.css',
-                    array(),
-                    $this->version,
-                    'all'
-                );
-                wp_enqueue_style( $this->plugin_name );
+                $this->enqueue_sdk_scripts( $injectedParams, $adminInjection );
             }
         }
         if ( $current_screen->id == "mapster-wp-map_page_wordpress-maps-settings" ) {
@@ -346,12 +340,104 @@ class Mapster_Wordpress_Maps_Admin {
         }
     }
 
-    /**
-     * Strictly for faster testing during development
-     *
-     * @since    1.0.0
-     */
-    public function mapster_wordpress_maps_script_loading_dev(
+    private function enqueue_sdk_scripts( $injectedParams, $adminInjection ) {
+        wp_register_script(
+            'mapster_map_admin_js',
+            plugin_dir_url( __FILE__ ) . 'js/dist/mwp-admin.js',
+            array('jquery'),
+            $this->version,
+            true
+        );
+        wp_localize_script( 'mapster_map_admin_js', 'mapster_admin', $adminInjection );
+        wp_enqueue_script( 'mapster_map_admin_js' );
+        wp_register_script(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) . '../admin/js/sdk/admin-linking-script.js',
+            array('jquery'),
+            $this->version,
+            true
+        );
+        wp_localize_script( $this->plugin_name, 'mapster_params', array_merge( $injectedParams, array(
+            'sdk_base_url' => plugin_dir_url( __FILE__ ) . '../admin/js/sdk/dist/',
+            'is_pro'       => ( function_exists( 'mwm_fs' ) && mwm_fs()->can_use_premium_code() ? 'true' : 'false' ),
+            'is_dev'       => ( defined( 'MAPSTER_LOCAL_TESTING' ) && MAPSTER_LOCAL_TESTING ? 'true' : 'false' ),
+        ) ) );
+        wp_enqueue_script( $this->plugin_name );
+    }
+
+    private function enqueue_legacy_compiled_scripts(
+        $last_dependency,
+        $map_provider,
+        $settings_page_id,
+        $model_3d_library,
+        $elevation_chart_enabled,
+        $store_locator_enabled,
+        $injectedParams,
+        $adminInjection
+    ) {
+        $scripts_to_load = "";
+        if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
+            $scripts_to_load = "maplibre-geocoding-mwp";
+        }
+        if ( $map_provider === 'mapbox' ) {
+            $scripts_to_load = "mapbox-geocoding-mwp";
+        }
+        if ( $map_provider === 'google-maps' ) {
+            $google_api_key = get_field( 'google_maps_api_key', $settings_page_id );
+            wp_enqueue_script(
+                'mapster_map_' . $map_provider,
+                "https://maps.googleapis.com/maps/api/js?key=" . $google_api_key . "&libraries=places",
+                array($last_dependency),
+                $this->version
+            );
+            $last_dependency = 'mapster_map_' . $map_provider;
+            $scripts_to_load = "google-mwp";
+        }
+        if ( mwm_fs()->can_use_premium_code() ) {
+            if ( $model_3d_library ) {
+                if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
+                    $scripts_to_load = "maplibre-threebox-mwp";
+                }
+                if ( $map_provider === 'mapbox' ) {
+                    $scripts_to_load = "mapbox-threebox-mwp";
+                }
+            }
+            if ( $elevation_chart_enabled ) {
+                $scripts_to_load = "mapbox-chart-mwp";
+            }
+        }
+        if ( $store_locator_enabled ) {
+            wp_enqueue_style( 'mapster_map_store_locator' );
+        }
+        wp_register_script(
+            'mapster_map_admin_js',
+            plugin_dir_url( __FILE__ ) . 'js/dist/mwp-admin.js',
+            array('jquery'),
+            $this->version,
+            true
+        );
+        wp_localize_script( 'mapster_map_admin_js', 'mapster_admin', $adminInjection );
+        wp_enqueue_script( 'mapster_map_admin_js' );
+        wp_register_script(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/compiled/' . $scripts_to_load . '.js',
+            array($last_dependency),
+            $this->version,
+            true
+        );
+        wp_localize_script( $this->plugin_name, 'mapster_params', $injectedParams );
+        wp_enqueue_script( $this->plugin_name );
+        wp_register_style(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) . '../public/css/legacy/' . $scripts_to_load . '.css',
+            array(),
+            $this->version,
+            'all'
+        );
+        wp_enqueue_style( $this->plugin_name );
+    }
+
+    private function enqueue_legacy_dev_scripts(
         $last_dependency,
         $map_provider,
         $settings_page_id,
@@ -525,114 +611,114 @@ class Mapster_Wordpress_Maps_Admin {
         }
         wp_enqueue_script(
             $this->plugin_name . "-ElevationControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/ElevationControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/ElevationControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-ElevationControl";
         wp_enqueue_script(
             $this->plugin_name . "-StyleControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/StyleControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/StyleControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-StyleControl";
         wp_enqueue_script(
             $this->plugin_name . "-LayerControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/LayerControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/LayerControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-LayerControl";
         wp_enqueue_script(
             $this->plugin_name . "-ControlMenu",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/ControlMenu.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/ControlMenu.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-ControlMenu";
         wp_enqueue_script(
             $this->plugin_name . "-CustomHTMLControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CustomHTMLControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/CustomHTMLControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-CustomHTMLControl";
         wp_enqueue_script(
             $this->plugin_name . "-DownloadControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/DownloadControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/DownloadControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-DownloadControl";
-        // wp_enqueue_script($this->plugin_name . "-MapsterSearchBoxControl", plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js', array($last_dependency), $this->version);
+        // wp_enqueue_script($this->plugin_name . "-MapsterSearchBoxControl", plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/MapsterSearchBoxControl.js', array($last_dependency), $this->version);
         // $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
         wp_enqueue_script(
             $this->plugin_name . "-CategoryControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CategoryControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/CategoryControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-CategoryControl";
         wp_enqueue_script(
             $this->plugin_name . "-ListControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/ListControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/ListControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-ListControl";
         wp_enqueue_script(
             $this->plugin_name . "-PitchToggle",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/PitchToggle.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/PitchToggle.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-PitchToggle";
         wp_enqueue_script(
             $this->plugin_name . "-PrintControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/PrintControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/PrintControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-PrintControl";
         wp_enqueue_script(
             $this->plugin_name . "-constants",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterConstants.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterConstants.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-constants";
         wp_enqueue_script(
             $this->plugin_name . "-helpers",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterHelpers.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterHelpers.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-helpers";
         wp_enqueue_script(
             $this->plugin_name . "-core",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterCore.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterCore.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-core";
         wp_enqueue_script(
             $this->plugin_name . "-container",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterContainer.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterContainer.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-container";
         wp_enqueue_script(
             $this->plugin_name . "-map",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterMap.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterMap.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-map";
         wp_register_script(
             $this->plugin_name . "-main-js",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterLoader.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterLoader.js',
             array($last_dependency),
             $this->version,
             true
@@ -654,35 +740,35 @@ class Mapster_Wordpress_Maps_Admin {
             $last_dependency = $this->plugin_name . "-google-clustering";
             wp_enqueue_script(
                 $this->plugin_name . "-google-category-control",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/CategoryControlGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/CategoryControlGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-google-category-control";
             wp_enqueue_script(
                 $this->plugin_name . "-google-list-control",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/ListControlGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/ListControlGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-google-list-control";
             wp_enqueue_script(
                 $this->plugin_name . "-core-google",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/MapsterCoreGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/MapsterCoreGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-core-google";
             wp_enqueue_script(
                 $this->plugin_name . "-helpers-google",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/MapsterHelpersGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/MapsterHelpersGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-helpers-google";
             wp_enqueue_script(
                 $this->plugin_name . "-map-google",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/MapsterMapGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/MapsterMapGoogle.js',
                 array($last_dependency),
                 $this->version
             );
@@ -1008,20 +1094,110 @@ class Mapster_Wordpress_Maps_Admin {
      *
      * @since    1.0.0
      */
-    public function add_mapster_wp_map_metabox() {
+    public function mapster_wp_maps_preview_after_title( $post ) {
+        if ( $post->post_type !== 'mapster-wp-map' ) {
+            return;
+        }
         $i18n = new Mapster_Wordpress_Maps_i18n();
+        $id = ( MAPSTER_LOCAL_TESTING && isset( $_GET['legacy'] ) ? 'mapster-wp-maps-map' : 'mapster-wp-maps' );
+        ?>
+		<div id="mapster-wp-maps-preview" class="postbox" style="margin-top:10px;">
+			<div class="postbox-header">
+				<h2 class="hndle"><span><?php 
+        echo esc_html( $i18n->get_mapster_strings()['admin']['Map Preview'] );
+        ?></span></h2>
+			</div>
+			<div class="inside" style="padding:0;">
+				<div id="<?php 
+        echo esc_attr( $id );
+        ?>" style="width:100%;height:400px;"></div>
+			</div>
+		</div>
+		<?php 
+    }
+
+    /**
+     * V2 pre-update backup metabox — low-visibility restore point for support use.
+     *
+     * @since    2.0.0
+     */
+    public function add_mapster_v2_backup_metabox() {
         add_meta_box(
-            'mapster-wp-maps-preview',
-            $i18n->get_mapster_strings()['admin']['Map Preview'],
-            function () {
-                echo '<div id="mapster-wp-maps-map" style="width: 100%; height: 400px;"></div>';
+            'mapster-v2-backup',
+            'V2 Feature Backup (Support)',
+            function ( $post ) {
+                $raw = get_option( 'mapster_v2_backup_' . $post->ID );
+                $backup = ( $raw ? unserialize( $raw ) : null );
+                if ( !$backup ) {
+                    echo '<p style="color:#999;font-size:12px;margin:0;">No snapshot — will be taken on first Mapmaker save after the V2 update.</p>';
+                    return;
+                }
+                $date = date( 'M j, Y g:i a', $backup['timestamp'] );
+                $feature_count = count( $backup['features'] );
+                $nonce = wp_create_nonce( 'wp_rest' );
+                $rest_url = get_rest_url( null, 'mapster-wp-maps/restore-v2-backup' );
+                ?>
+				<p style="font-size:12px;color:#555;margin:0 0 6px;"><?php 
+                echo esc_html( $feature_count );
+                ?> feature<?php 
+                echo ( $feature_count !== 1 ? 's' : '' );
+                ?> snapshotted <?php 
+                echo esc_html( $date );
+                ?>.</p>
+				<p style="font-size:11px;color:#999;margin:0 0 10px;">Restores all feature data and re-associates them with this map. Map settings (style, zoom, etc.) are not restored — those can be adjusted manually.</p>
+				<button type="button" class="button" id="mapster-restore-backup-btn"
+					data-map-id="<?php 
+                echo esc_attr( $post->ID );
+                ?>"
+					data-nonce="<?php 
+                echo esc_attr( $nonce );
+                ?>"
+					data-url="<?php 
+                echo esc_url( $rest_url );
+                ?>">
+					Restore Feature Snapshot
+				</button>
+				<span id="mapster-restore-status" style="display:none;margin-left:8px;font-size:12px;"></span>
+				<script>
+				(function() {
+					document.getElementById('mapster-v2-backup').classList.add('closed');
+					var btn = document.getElementById('mapster-restore-backup-btn');
+					if (!btn) return;
+					btn.addEventListener('click', function() {
+						if (!confirm('This will restore all <?php 
+                echo esc_js( $feature_count );
+                ?> features to their pre-V2 state and re-associate them with this map. Continue?')) return;
+						btn.disabled = true;
+						var status = document.getElementById('mapster-restore-status');
+						status.style.display = 'inline';
+						status.style.color = '#666';
+						status.textContent = 'Restoring\u2026';
+						fetch(btn.dataset.url, {
+							method: 'POST',
+							headers: { 'X-WP-Nonce': btn.dataset.nonce, 'Content-Type': 'application/json' },
+							body: JSON.stringify({ map_id: parseInt(btn.dataset.mapId) })
+						}).then(function(r) { return r.json(); }).then(function(data) {
+							if (data.success) {
+								status.style.color = 'green';
+								status.textContent = 'Done — reload to verify.';
+							} else {
+								status.style.color = 'red';
+								status.textContent = 'Error: ' + (data.message || 'unknown');
+								btn.disabled = false;
+							}
+						}).catch(function() {
+							status.style.color = 'red';
+							status.textContent = 'Request failed.';
+							btn.disabled = false;
+						});
+					});
+				})();
+				</script>
+				<?php 
             },
             'mapster-wp-map',
             'normal',
-            'core',
-            array(
-                '__block_editor_compatible_meta_box' => true,
-            )
+            'low'
         );
     }
 
@@ -1116,9 +1292,54 @@ class Mapster_Wordpress_Maps_Admin {
     public function mapster_wp_maps_row_action_menu( $actions, $post ) {
         $i18n = new Mapster_Wordpress_Maps_i18n();
         if ( $post->post_type == 'mapster-wp-popup' || $post->post_type == 'mapster-wp-polygon' || $post->post_type == 'mapster-wp-location' || $post->post_type == 'mapster-wp-line' || $post->post_type == 'mapster-wp-map' ) {
+            $link = admin_url( 'post.php?action=edit&post=' . $post->ID );
+            $classic_action = [
+                'mapster-wp-maps-classic' => '<a href="' . $link . '">' . $i18n->get_mapster_strings()['admin']['Edit in Classic'] . '</a>',
+            ];
             $actions['mapster-wp-maps-duplicate'] = '<a id="mapster-' . $post->ID . '" class="mapster-duplicate" href="#">' . $i18n->get_mapster_strings()['admin']['Duplicate'] . '</a>';
+            $actions = array_slice(
+                $actions,
+                0,
+                1,
+                true
+            ) + $classic_action + array_slice(
+                $actions,
+                1,
+                null,
+                true
+            );
         }
         return $actions;
+    }
+
+    /**
+     * Add change mapmaker edit link
+     *
+     * @since    1.0.0
+     */
+    public function mapster_wp_maps_edit_link_mapmaker( $link, $post_id, $context ) {
+        $post = get_post( $post_id );
+        $allowed_types = ['mapster-wp-map'];
+        if ( in_array( $post->post_type, $allowed_types ) ) {
+            // Don't redirect if we're on the classic editor or saving from it
+            if ( isset( $_SERVER['REQUEST_URI'] ) && strpos( $_SERVER['REQUEST_URI'], 'post.php' ) !== false ) {
+                return $link;
+            }
+            $link = admin_url( 'edit.php?post_type=mapster-wp-map&page=wordpress-maps-mapmaker&id=' . $post_id );
+        }
+        return $link;
+    }
+
+    /**
+     * Add change mapmaker edit link
+     *
+     * @since    1.0.0
+     */
+    public function mapster_wp_maps_add_link_mapmaker( $url, $path ) {
+        if ( $path === 'post-new.php?post_type=mapster-wp-map' ) {
+            $url = admin_url( 'edit.php?post_type=mapster-wp-map&page=wordpress-maps-mapmaker' );
+        }
+        return $url;
     }
 
     /**
@@ -1128,6 +1349,17 @@ class Mapster_Wordpress_Maps_Admin {
      */
     public function mapster_wp_maps_settings_menu() {
         $i18n = new Mapster_Wordpress_Maps_i18n();
+        add_submenu_page(
+            'edit.php?post_type=mapster-wp-map',
+            $i18n->get_mapster_strings()['admin']['Mapmaker'],
+            $i18n->get_mapster_strings()['admin']['Mapmaker'],
+            'manage_options',
+            'wordpress-maps-mapmaker',
+            function () {
+                include 'partials/mapster-wordpress-maps-mapmaker-page.php';
+            },
+            10
+        );
         add_submenu_page(
             'edit.php?post_type=mapster-wp-map',
             $i18n->get_mapster_strings()['admin']['Categories'],
@@ -1145,6 +1377,41 @@ class Mapster_Wordpress_Maps_Admin {
                 include 'partials/mapster-wordpress-maps-settings-page.php';
             }
         );
+    }
+
+    /**
+     * Create custom select block for Gutenberg
+     *
+     * @since    1.0.0
+     */
+    public function mapmaker_page_setup() {
+        if ( !isset( $_GET['page'] ) || $_GET['page'] !== 'wordpress-maps-mapmaker' ) {
+            return;
+        }
+        // Admin bar — must be filtered before it renders
+        add_filter( 'show_admin_bar', '__return_false' );
+        // Suppress all notices
+        remove_all_actions( 'admin_notices' );
+        remove_all_actions( 'network_admin_notices' );
+        remove_all_actions( 'all_admin_notices' );
+        add_action( 'admin_enqueue_scripts', function () {
+            // Remove WP's own admin styles
+            wp_dequeue_style( 'wp-admin' );
+            wp_dequeue_style( 'colors' );
+            wp_dequeue_style( 'ie' );
+            wp_dequeue_style( 'wp-auth-check' );
+            global $wp_styles;
+            // Nuclear option - remove everything WP queued
+            $wp_styles->queue = [];
+        }, PHP_INT_MAX );
+        // Strip the entire WP admin menu and sidebar
+        add_action( 'admin_head', function () {
+            echo '<style>
+              #adminmenuwrap, #adminmenuback, #wpadminbar, #wpfooter { display: none !important; }
+              #wpcontent, #wpbody { margin-left: 0 !important; padding-top: 0 !important; }
+              html.wp-toolbar { padding-top: 0 !important; }
+          </style>';
+        } );
     }
 
     /**
@@ -1226,6 +1493,63 @@ class Mapster_Wordpress_Maps_Admin {
     }
 
     /**
+     * V2 upgrade notice — shown to existing users upgrading from V1, until explicitly dismissed.
+     *
+     * @since    2.0.0
+     */
+    function mapster_wp_maps_v2_upgrade_notice() {
+        if ( get_option( 'mapster_welcome_message' ) && !get_option( 'mapster_v2_notice_dismissed' ) ) {
+            $nonce = wp_create_nonce( 'wp_rest' );
+            $rest_url = get_rest_url();
+            $qd = $this->mapster_get_rest_url_delimiter();
+            ?>
+			<div class="notice notice-warning mapster-v2-upgrade-notice" id="mapster-v2-upgrade-notice" style="padding: 16px 16px 16px 20px; border-left-color: #e65c00;">
+				<div style="display:flex; align-items:flex-start; gap: 14px;">
+					<img style="width: 40px; margin-top: 4px; flex-shrink: 0;" src="<?php 
+            echo esc_url( plugin_dir_url( __FILE__ ) . 'images/logo-Mapster.png' );
+            ?>" />
+					<div>
+						<h3 style="margin: 4px 0 8px;">You've upgraded to Mapster WP Maps V2!</h3>
+						<p style="margin: 0 0 8px; max-width: 760px;">This is a big update. Everything should be safe, but if you're worried, downgrading is 100% possible.</p>
+						<p style="margin: 0 0 8px; max-width: 760px;">In rare cases involving maps with complex configurations, you may have errors. We are here to support, but if you want to wait a couple months, we won't fault you for it!</p>
+						<p style="margin: 0 0 14px; max-width: 760px;">This guide walks you through rolling back if you prefer.</p>
+						<p style="margin: 0;">
+							<a href="https://wpmaps-docs.mapster.me/mapster-wp-maps-v2/getting-started/upgrading-from-v1" target="_blank" class="button button-primary" style="margin-right: 8px;">V2 Notes &amp; Rollback Guide</a>
+							<button type="button" class="button" id="mapster-v2-dismiss-btn">Got it — dismiss this notice</button>
+						</p>
+					</div>
+				</div>
+			</div>
+			<script>
+			(function() {
+				var btn = document.getElementById('mapster-v2-dismiss-btn');
+				if (!btn) return;
+				btn.addEventListener('click', function() {
+					btn.disabled = true;
+					fetch('<?php 
+            echo esc_url( $rest_url . 'mapster-wp-maps/dismiss-v2-notice' . $qd );
+            ?>', {
+						method: 'POST',
+						headers: {
+							'X-WP-Nonce': '<?php 
+            echo esc_js( $nonce );
+            ?>',
+							'Content-Type': 'application/json'
+						}
+					}).then(function(r) { return r.json(); }).then(function() {
+						var notice = document.getElementById('mapster-v2-upgrade-notice');
+						if (notice) notice.style.display = 'none';
+					}).catch(function() {
+						btn.disabled = false;
+					});
+				});
+			})();
+			</script>
+			<?php 
+        }
+    }
+
+    /**
      * Custom header a la ACF
      *
      * @since    1.0.0
@@ -1234,88 +1558,90 @@ class Mapster_Wordpress_Maps_Admin {
         $i18n = new Mapster_Wordpress_Maps_i18n();
         $current_screen = get_current_screen();
         if ( strpos( $current_screen->id, "mapster" ) !== false || strpos( $current_screen->post_type, "mapster" ) !== false ) {
-            ?>
+            if ( strpos( $current_screen->id, "mapmaker" == false ) ) {
+                ?>
 				<div class="mapster-admin-toolbar">
 					<h2><i class="acf-tab-icon dashicons dashicons-location-alt"></i> <?php 
-            echo $i18n->get_mapster_strings()['admin']['Top Menu Header'];
-            ?></h2>
+                echo $i18n->get_mapster_strings()['admin']['Top Menu Header'];
+                ?></h2>
 					<a class="acf-tab <?php 
-            echo ( $current_screen->id == 'edit-mapster-wp-map' || $current_screen->id === 'mapster-wp-map' ? "is-active" : "" );
-            ?>" href="edit.php?post_type=mapster-wp-map"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Maps'];
-            ?></a>
+                echo ( $current_screen->id == 'edit-mapster-wp-map' || $current_screen->id === 'mapster-wp-map' ? "is-active" : "" );
+                ?>" href="edit.php?post_type=mapster-wp-map"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Maps'];
+                ?></a>
 					<a class="acf-tab <?php 
-            echo ( $current_screen->post_type == 'mapster-wp-location' ? "is-active" : "" );
-            ?>" href="edit.php?post_type=mapster-wp-location"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Locations'];
-            ?></a>
+                echo ( $current_screen->post_type == 'mapster-wp-location' ? "is-active" : "" );
+                ?>" href="edit.php?post_type=mapster-wp-location"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Locations'];
+                ?></a>
 					<a class="acf-tab <?php 
-            echo ( $current_screen->post_type == 'mapster-wp-line' ? "is-active" : "" );
-            ?>" href="edit.php?post_type=mapster-wp-line"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Lines'];
-            ?></a>
+                echo ( $current_screen->post_type == 'mapster-wp-line' ? "is-active" : "" );
+                ?>" href="edit.php?post_type=mapster-wp-line"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Lines'];
+                ?></a>
 					<a class="acf-tab <?php 
-            echo ( $current_screen->post_type == 'mapster-wp-polygon' ? "is-active" : "" );
-            ?>" href="edit.php?post_type=mapster-wp-polygon"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Polygons'];
-            ?></a>
+                echo ( $current_screen->post_type == 'mapster-wp-polygon' ? "is-active" : "" );
+                ?>" href="edit.php?post_type=mapster-wp-polygon"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Polygons'];
+                ?></a>
 					<a class="acf-tab <?php 
-            echo ( $current_screen->post_type == 'mapster-wp-popup' ? "is-active" : "" );
-            ?>" href="edit.php?post_type=mapster-wp-popup"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Popup Templates'];
-            ?></a>
-					<?php 
-            if ( mwm_fs()->can_use_premium_code() ) {
-                $settings_page_id = get_option( 'mapster_settings_page' );
-                if ( $settings_page_id ) {
-                    $user_submission = get_field( 'pro_mwm_user_submission', $settings_page_id );
-                    if ( $user_submission ) {
-                        ?>
-									<a class="acf-tab <?php 
-                        echo ( $current_screen->post_type == 'mapster-wp-user-sub' ? "is-active" : "" );
-                        ?>" href="edit.php?post_type=mapster-wp-user-sub"><?php 
-                        echo $i18n->get_mapster_strings()['admin']['User Submission'];
-                        ?></a>
-								<?php 
-                    }
-                }
-            }
-            ?>
-					<?php 
-            if ( mwm_fs()->can_use_premium_code() ) {
-                ?>
-							<a class="acf-tab <?php 
-                echo ( $current_screen->id == 'mapster-wp-map_page_wordpress-maps-mass-edit' ? "is-active" : "" );
-                ?>" href="edit.php?post_type=mapster-wp-map&page=wordpress-maps-mass-edit"><?php 
-                echo $i18n->get_mapster_strings()['admin']['Mass Edit'];
+                echo ( $current_screen->post_type == 'mapster-wp-popup' ? "is-active" : "" );
+                ?>" href="edit.php?post_type=mapster-wp-popup"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Popup Templates'];
                 ?></a>
 					<?php 
-            }
-            ?>
-					<a class="acf-tab <?php 
-            echo ( $current_screen->id == 'edit-wp-map-category' ? "is-active" : "" );
-            ?>" href="edit-tags.php?taxonomy=wp-map-category&post_type=mapster-wp-map"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Categories'];
-            ?></a>
-					<a class="acf-tab <?php 
-            echo ( $current_screen->id == 'mapster-wp-map_page_wordpress-maps-settings' || $current_screen->id == 'mapster-wp-map_page_wordpress-maps-settings-pricing' || $current_screen->id == 'mapster-wp-map_page_wordpress-maps-settings-account' ? "is-active" : "" );
-            ?>" href="edit.php?post_type=mapster-wp-map&page=wordpress-maps-settings"><?php 
-            echo $i18n->get_mapster_strings()['admin']['Settings'];
-            ?></a>
-					<?php 
-            if ( !mwm_fs()->can_use_premium_code() ) {
+                if ( mwm_fs()->can_use_premium_code() ) {
+                    $settings_page_id = get_option( 'mapster_settings_page' );
+                    if ( $settings_page_id ) {
+                        $user_submission = get_field( 'pro_mwm_user_submission', $settings_page_id );
+                        if ( $user_submission ) {
+                            ?>
+									<a class="acf-tab <?php 
+                            echo ( $current_screen->post_type == 'mapster-wp-user-sub' ? "is-active" : "" );
+                            ?>" href="edit.php?post_type=mapster-wp-user-sub"><?php 
+                            echo $i18n->get_mapster_strings()['admin']['User Submission'];
+                            ?></a>
+								<?php 
+                        }
+                    }
+                }
                 ?>
+					<?php 
+                if ( mwm_fs()->can_use_premium_code() ) {
+                    ?>
+							<a class="acf-tab <?php 
+                    echo ( $current_screen->id == 'mapster-wp-map_page_wordpress-maps-mass-edit' ? "is-active" : "" );
+                    ?>" href="edit.php?post_type=mapster-wp-map&page=wordpress-maps-mass-edit"><?php 
+                    echo $i18n->get_mapster_strings()['admin']['Mass Edit'];
+                    ?></a>
+					<?php 
+                }
+                ?>
+					<a class="acf-tab <?php 
+                echo ( $current_screen->id == 'edit-wp-map-category' ? "is-active" : "" );
+                ?>" href="edit-tags.php?taxonomy=wp-map-category&post_type=mapster-wp-map"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Categories'];
+                ?></a>
+					<a class="acf-tab <?php 
+                echo ( $current_screen->id == 'mapster-wp-map_page_wordpress-maps-settings' || $current_screen->id == 'mapster-wp-map_page_wordpress-maps-settings-pricing' || $current_screen->id == 'mapster-wp-map_page_wordpress-maps-settings-account' ? "is-active" : "" );
+                ?>" href="edit.php?post_type=mapster-wp-map&page=wordpress-maps-settings"><?php 
+                echo $i18n->get_mapster_strings()['admin']['Settings'];
+                ?></a>
+					<?php 
+                if ( !mwm_fs()->can_use_premium_code() ) {
+                    ?>
 						<a target="_blank" href="https://wpmaps.mapster.me/pro" class="btn-upgrade">
 							<i style="margin-top: 5px;" class="dashicons dashicons-star-filled"></i>
 							<p><?php 
-                echo $i18n->get_mapster_strings()['admin']['Download Pro'];
-                ?></p>
+                    echo $i18n->get_mapster_strings()['admin']['Download Pro'];
+                    ?></p>
 						</a>
 					<?php 
-            }
-            ?>
+                }
+                ?>
 				</div>
 			<?php 
+            }
         }
     }
 
@@ -1469,6 +1795,36 @@ class Mapster_Wordpress_Maps_Admin {
             // tell ACF to group by taxonomy
         }
         return $title;
+    }
+
+    /**
+     * Custom field validation for ACF
+     *
+     * @since    1.0.0
+     */
+    function mapster_edit_mapmaker_button() {
+        $screen = get_current_screen();
+        if ( $screen->post_type !== 'mapster-wp-map' ) {
+            return;
+        }
+        $post_id = ( isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0 );
+        $map_url = admin_url( 'edit.php' ) . '?post_type=mapster-wp-map&page=wordpress-maps-mapmaker&id=' . $post_id;
+        ?>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const addNewBtn = document.querySelector('a.page-title-action');
+        if ( addNewBtn ) {
+          const btn = document.createElement('a');
+          btn.href    = '<?php 
+        echo $map_url;
+        ?>'; // or your target URL
+          btn.className = 'page-title-action';
+          btn.textContent = 'Edit in Mapmaker';
+          addNewBtn.insertAdjacentElement('afterend', btn);
+        }
+      });
+    </script>
+    <?php 
     }
 
 }

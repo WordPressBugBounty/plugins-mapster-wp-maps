@@ -1,3 +1,8 @@
+/* Overriding map compare in editor */
+body #mapster-wp-maps {
+  position: relative !important;
+}
+
 @keyframes border-pulsate {
     0%   { border-color: rgba(0, 255, 255, 1); }
     50%  { border-color: rgba(0, 255, 255, 0); }
@@ -94,9 +99,9 @@
 }
 
 /* ACF reorganization */
-#acf-group_61636c62b003e > .acf-fields > .acf-field:not(.acf-field-tab) {
+/*#acf-group_61636c62b003e > .acf-fields > .acf-field:not(.acf-field-tab) {
   margin-left: 20%;
-}
+}*/
 #acf-group_61636c62b003e .acf-fields .acf-field[data-name="load_3d_model_libraries"] {
   margin-left: 0px;
 }
@@ -218,7 +223,7 @@ body .acf-field.acf-field-62832f86ed5ce .acf-label {
  {
   display : none;
 }
- 
+
 .mapster-extra-form-fields [data-name="base_image"],
 #acf-group_6163732e0426e [data-name="base_image"],
 #acf-group_616377d62836b [data-name="base_image"],

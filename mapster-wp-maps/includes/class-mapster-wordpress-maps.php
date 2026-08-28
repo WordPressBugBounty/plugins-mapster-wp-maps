@@ -144,11 +144,30 @@ class Mapster_Wordpress_Maps {
     private function define_admin_hooks() {
         $plugin_admin = new Mapster_Wordpress_Maps_Admin($this->get_plugin_name(), $this->get_version());
         $this->loader->add_action( 'plugins_loaded', $plugin_admin, 'mapster_load_acf' );
+        $this->loader->add_action( 'admin_init', $plugin_admin, 'mapster_200_update' );
+        $this->loader->add_action( 'admin_init', $plugin_admin, 'mapmaker_page_setup' );
         $this->loader->add_action( 'init', $plugin_admin, 'add_mapster_wp_maps_default_options' );
         $this->loader->add_action( 'init', $plugin_admin, 'create_mapster_wp_maps_post_types' );
         $this->loader->add_action( 'init', $plugin_admin, 'mapster_add_default_popups' );
         $this->loader->add_action( 'init', $plugin_admin, 'load_mapster_map_block' );
-        $this->loader->add_action( 'add_meta_boxes', $plugin_admin, 'add_mapster_wp_map_metabox' );
+        $this->loader->add_action(
+            'admin_url',
+            $plugin_admin,
+            'mapster_wp_maps_add_link_mapmaker',
+            10,
+            2
+        );
+        $this->loader->add_action(
+            'get_edit_post_link',
+            $plugin_admin,
+            'mapster_wp_maps_edit_link_mapmaker',
+            10,
+            3
+        );
+        $this->loader->add_action( 'admin_head-post-new.php', $plugin_admin, 'mapster_edit_mapmaker_button' );
+        $this->loader->add_action( 'admin_head-post.php', $plugin_admin, 'mapster_edit_mapmaker_button' );
+        $this->loader->add_action( 'edit_form_after_title', $plugin_admin, 'mapster_wp_maps_preview_after_title' );
+        $this->loader->add_action( 'add_meta_boxes', $plugin_admin, 'add_mapster_v2_backup_metabox' );
         $this->loader->add_filter( 'manage_mapster-wp-map_posts_columns', $plugin_admin, 'set_custom_mapster_map_column' );
         $this->loader->add_action(
             'manage_mapster-wp-map_posts_custom_column',
@@ -249,11 +268,21 @@ class Mapster_Wordpress_Maps {
         $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_duplicate_post' );
         $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_import_gl_js_features' );
         $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_set_tutorial_option' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_dismiss_v2_notice' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_restore_v2_backup' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_get_live_config' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_save_mapmaker' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_get_popup_templates' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_update_post_title' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_get_map_sources' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_save_map_sources' );
+        $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_search_sources' );
         if ( !mwm_fs()->can_use_premium_code() ) {
             $this->loader->add_action( 'rest_api_init', $custom_endpoints, 'mapster_wp_maps_import_geojson_features' );
         }
         $this->loader->add_action( 'in_admin_header', $plugin_admin, 'mapster_wp_maps_custom_header' );
         $this->loader->add_action( 'admin_notices', $plugin_admin, 'mapster_wp_maps_admin_notice' );
+        $this->loader->add_action( 'admin_notices', $plugin_admin, 'mapster_wp_maps_v2_upgrade_notice' );
         $this->loader->add_filter(
             'acf/input/meta_box_priority',
             $plugin_admin,

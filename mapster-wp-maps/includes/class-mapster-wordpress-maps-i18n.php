@@ -196,6 +196,7 @@ class Mapster_Wordpress_Maps_i18n {
 				"Listing Shortcode" => __("Listing Shortcode", 'mapster-wordpress-maps'),
 				"Map Shortcode" => __("Map Shortcode", 'mapster-wordpress-maps'),
 				"Date" => __("Date", 'mapster-wordpress-maps'),
+				"Edit in Classic" => __("Edit in Classic Editor", 'mapster-wordpress-maps'),
 				"Duplicate" => __("Duplicate", 'mapster-wordpress-maps'),
 
 				"Map Preview" => __("Map Preview", 'mapster-wordpress-maps'),
@@ -204,6 +205,7 @@ class Mapster_Wordpress_Maps_i18n {
 				"Add New" => __("Add New", 'mapster-wordpress-maps'),
 				"View" => __("View", 'mapster-wordpress-maps'),
 
+				"Mapmaker" => __("Mapmaker", 'mapster-wordpress-maps'),
 				"Mass Edit" => __("Mass Edit", 'mapster-wordpress-maps'),
 				"Categories" => __("Categories", 'mapster-wordpress-maps'),
 				"Settings" => __("Settings", 'mapster-wordpress-maps'),

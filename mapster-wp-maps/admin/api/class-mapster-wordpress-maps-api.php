@@ -1,6 +1,85 @@
 <?php
 
+include_once plugin_dir_path( __FILE__ ) . 'config-converter.php';
+include_once plugin_dir_path( __FILE__ ) . 'feature-writer.php';
+include_once plugin_dir_path( __FILE__ ) . 'map-sources.php';
 class Mapster_Wordpress_Maps_Admin_API {
+    public function mapster_wp_maps_dismiss_v2_notice() {
+        register_rest_route( 'mapster-wp-maps', 'dismiss-v2-notice', array(
+            'methods'             => 'POST',
+            'callback'            => function () {
+                update_option( 'mapster_v2_notice_dismissed', true );
+                return array(
+                    'success' => true,
+                );
+            },
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+    }
+
+    public function mapster_wp_maps_restore_v2_backup() {
+        register_rest_route( 'mapster-wp-maps', 'restore-v2-backup', array(
+            'methods'             => 'POST',
+            'callback'            => function ( $request ) {
+                $map_id = intval( $request->get_param( 'map_id' ) );
+                if ( !$map_id ) {
+                    return new WP_Error('missing_id', 'Map ID is required', [
+                        'status' => 400,
+                    ]);
+                }
+                $raw = get_option( 'mapster_v2_backup_' . $map_id );
+                $backup = ( $raw ? unserialize( $raw ) : null );
+                if ( !$backup || empty( $backup['features'] ) ) {
+                    return new WP_Error('no_backup', 'No backup found for this map', [
+                        'status' => 404,
+                    ]);
+                }
+                // Restore each feature's ACF data via raw meta writes — this bypasses ACF hooks
+                // and faithfully restores the exact bytes that were there before the V2 save.
+                foreach ( $backup['features'] as $fid => $meta ) {
+                    foreach ( $meta as $field_name => $entry ) {
+                        update_post_meta( intval( $fid ), $field_name, $entry['value'] );
+                        update_post_meta( intval( $fid ), '_' . $field_name, $entry['field_key'] );
+                    }
+                }
+                // Restore the map's feature associations by re-deriving them from the backup's
+                // feature list. We don't restore the full map config (it's user-fixable and the
+                // meta restore was causing the Mapmaker to break). We only reassociate features.
+                $locs = [];
+                $lines = [];
+                $polys = [];
+                foreach ( array_keys( $backup['features'] ) as $fid ) {
+                    $type = get_post_type( intval( $fid ) );
+                    if ( $type === 'mapster-wp-location' ) {
+                        $locs[] = intval( $fid );
+                    } elseif ( $type === 'mapster-wp-line' ) {
+                        $lines[] = intval( $fid );
+                    } elseif ( $type === 'mapster-wp-polygon' ) {
+                        $polys[] = intval( $fid );
+                    }
+                }
+                if ( !empty( $locs ) ) {
+                    update_field( 'locations', $locs, $map_id );
+                }
+                if ( !empty( $lines ) ) {
+                    update_field( 'lines', $lines, $map_id );
+                }
+                if ( !empty( $polys ) ) {
+                    update_field( 'polygons', $polys, $map_id );
+                }
+                return [
+                    'success'        => true,
+                    'snapshot_taken' => $backup['timestamp'],
+                ];
+            },
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+    }
+
     public function mapster_wp_maps_set_tutorial_option() {
         register_rest_route( 'mapster-wp-maps', 'set-tutorial-option', array(
             'methods'             => 'GET',
@@ -405,6 +484,357 @@ class Mapster_Wordpress_Maps_Admin_API {
 
     }
 
+    public function mapster_wp_maps_save_mapmaker() {
+        register_rest_route( 'mapster-wp-maps', 'save-mapmaker', array(
+            'methods'             => 'POST',
+            'callback'            => 'mapster_wp_maps_mapmaker_save',
+            'permission_callback' => function () {
+                return true;
+                // open to public
+            },
+        ) );
+        function mapster_wp_maps_mapmaker_save(  $request  ) {
+            $body = json_decode( $request->get_body(), true );
+            $post_id = $body['config']['id'] ?? null;
+            if ( !$post_id ) {
+                return new WP_Error('missing_id', 'Map ID is required', [
+                    'status' => 400,
+                ]);
+            }
+            // One-time pre-V2 snapshot: taken on first save after the update, never overwritten.
+            // Only runs when the map has existing features — fresh maps with no V1 data don't need it.
+            $backup_option = 'mapster_v2_backup_' . $post_id;
+            if ( !get_option( $backup_option ) ) {
+                // Capture ACF-managed meta keys only (those with a field_ pointer).
+                // Stores both the data key and pointer key so update_post_meta can restore exactly.
+                // Keyed by readable field name so the stored JSON is inspectable.
+                $snap_acf = function ( $id ) {
+                    $out = [];
+                    $all = get_post_meta( $id );
+                    foreach ( $all as $key => $v ) {
+                        if ( $key[0] === '_' ) {
+                            continue;
+                        }
+                        $acf_field_key = $all['_' . $key][0] ?? null;
+                        if ( $acf_field_key && strpos( $acf_field_key, 'field_' ) === 0 ) {
+                            $out[$key] = [
+                                'value'     => $v[0],
+                                'field_key' => $acf_field_key,
+                            ];
+                        }
+                    }
+                    return $out;
+                };
+                $to_ids = fn( $items ) => array_map( fn( $i ) => ( is_object( $i ) ? $i->ID : intval( $i ) ), (array) $items );
+                $feature_ids = array_filter( array_merge( $to_ids( ( get_field( 'locations', $post_id ) ?: [] ) ), $to_ids( ( get_field( 'lines', $post_id ) ?: [] ) ), $to_ids( ( get_field( 'polygons', $post_id ) ?: [] ) ) ) );
+                if ( !empty( $feature_ids ) ) {
+                    $backup = [
+                        'timestamp' => time(),
+                        'map'       => $snap_acf( $post_id ),
+                        'features'  => [],
+                    ];
+                    foreach ( $feature_ids as $fid ) {
+                        $backup['features'][$fid] = $snap_acf( $fid );
+                    }
+                    // PHP serialize preserves exact PHP types; stored as non-autoloaded option.
+                    update_option( $backup_option, serialize( $backup ), false );
+                }
+            }
+            // Write map provider and/or style ID when the user switches style systems.
+            if ( !empty( $body['provider'] ) ) {
+                update_field( 'map_type_map_provider', sanitize_text_field( $body['provider'] ), $post_id );
+            }
+            if ( !empty( $body['style']['id'] ) ) {
+                $style_field_map = [
+                    'access_token'    => 'map_type_map_tile_style_access_token',
+                    'no_access_token' => 'map_type_map_tile_style_no_access_token',
+                ];
+                $style_field = $style_field_map[sanitize_key( $body['style']['type'] ?? '' )] ?? null;
+                if ( $style_field ) {
+                    update_field( $style_field, sanitize_text_field( $body['style']['id'] ), $post_id );
+                }
+            }
+            // Write map config
+            mapster_write_config_to_acf( $post_id, $body['config'] );
+            // Persist Google key to settings page if provided
+            $google_key = $body['config']['google_key'] ?? '';
+            if ( $google_key !== '' && $google_key !== false ) {
+                $settings_page_id = get_option( 'mapster_settings_page' );
+                update_field( 'google_maps_api_key', sanitize_text_field( $google_key ), $settings_page_id );
+            }
+            // Write features — create new ones, update existing ones
+            $id_map = [];
+            // tempId → real WP post ID, returned to client
+            $writer = new Mapster_Feature_Writer();
+            $features = $body['features'] ?? [];
+            foreach ( $features as $feature ) {
+                if ( !empty( $feature['_new'] ) ) {
+                    $real_id = $writer->create_feature( $feature );
+                    $id_map[strval( $feature['metadata']['id'] )] = $real_id;
+                } else {
+                    $feature_id = $feature['metadata']['id'] ?? null;
+                    if ( $feature_id ) {
+                        $writer->write_feature_to_acf( (int) $feature_id, $feature );
+                    }
+                }
+            }
+            if ( !empty( $features ) ) {
+                $writer->sync_direct_associations( $post_id, $features, $id_map );
+            }
+            // Collect popup styles for all saved features (using resolved real IDs for new ones)
+            $popup_styles = [];
+            $popup_styles_seen = [];
+            $all_feature_ids = array_merge( array_values( $id_map ), array_filter( array_map( fn( $f ) => ( empty( $f['_new'] ) ? intval( $f['metadata']['id'] ?? 0 ) : 0 ), $features ) ) );
+            foreach ( $all_feature_ids as $fid ) {
+                if ( !$fid ) {
+                    continue;
+                }
+                $style = get_field( 'popup_style', $fid );
+                if ( !$style ) {
+                    continue;
+                }
+                $sid = $style->ID;
+                if ( in_array( $sid, $popup_styles_seen ) ) {
+                    continue;
+                }
+                $popup_styles_seen[] = $sid;
+                $popup_styles[] = mapster_build_popup_template( $sid );
+            }
+            return [
+                'success'      => true,
+                'id'           => $post_id,
+                'id_map'       => $id_map,
+                'popup_styles' => $popup_styles,
+            ];
+        }
+
+    }
+
+    public function mapster_wp_maps_get_popup_templates() {
+        register_rest_route( 'mapster-wp-maps', 'popup-templates', array(
+            'methods'             => 'GET',
+            'callback'            => 'mapster_wp_maps_get_popup_templates_cb',
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+        function mapster_wp_maps_get_popup_templates_cb(  $request  ) {
+            $page = max( 1, intval( $request->get_param( 'page' ) ?? 1 ) );
+            $per_page = 20;
+            $query = new WP_Query([
+                'post_type'      => 'mapster-wp-popup',
+                'post_status'    => 'publish',
+                'posts_per_page' => $per_page,
+                'paged'          => $page,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+            ]);
+            $templates = array_map( fn( $post ) => mapster_build_popup_template( $post->ID ), $query->posts );
+            return [
+                'templates' => $templates,
+                'total'     => (int) $query->found_posts,
+                'pages'     => (int) $query->max_num_pages,
+                'page'      => $page,
+            ];
+        }
+
+    }
+
+    public function mapster_wp_maps_update_post_title() {
+        register_rest_route( 'mapster-wp-maps', 'update-post-title', array(
+            'methods'             => 'POST',
+            'callback'            => 'mapster_wp_maps_update_post_title_cb',
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+        function mapster_wp_maps_update_post_title_cb(  $request  ) {
+            $body = json_decode( $request->get_body(), true );
+            $post_id = intval( $body['id'] ?? 0 );
+            $title = sanitize_text_field( $body['title'] ?? '' );
+            if ( !$post_id || !$title ) {
+                return new WP_Error('missing_params', 'id and title are required', [
+                    'status' => 400,
+                ]);
+            }
+            $result = wp_update_post( [
+                'ID'         => $post_id,
+                'post_title' => $title,
+            ], true );
+            if ( is_wp_error( $result ) ) {
+                return new WP_Error('update_failed', $result->get_error_message(), [
+                    'status' => 500,
+                ]);
+            }
+            return [
+                'id'    => $post_id,
+                'title' => $title,
+            ];
+        }
+
+    }
+
+    public function mapster_wp_maps_get_map_sources() {
+        register_rest_route( 'mapster-wp-maps', 'map-sources', array(
+            'methods'             => 'GET',
+            'callback'            => 'mapster_wp_maps_get_map_sources_cb',
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+        function mapster_wp_maps_get_map_sources_cb(  $request  ) {
+            $map_id = intval( $request->get_param( 'id' ) );
+            if ( !$map_id ) {
+                return new WP_Error('missing_id', 'Map ID is required', [
+                    'status' => 400,
+                ]);
+            }
+            return Mapster_Map_Sources::get( $map_id );
+        }
+
+    }
+
+    public function mapster_wp_maps_save_map_sources() {
+        register_rest_route( 'mapster-wp-maps', 'save-sources', array(
+            'methods'             => 'POST',
+            'callback'            => 'mapster_wp_maps_save_map_sources_cb',
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+        function mapster_wp_maps_save_map_sources_cb(  $request  ) {
+            $body = json_decode( $request->get_body(), true );
+            $map_id = intval( $body['id'] ?? 0 );
+            if ( !$map_id ) {
+                return new WP_Error('missing_id', 'Map ID is required', [
+                    'status' => 400,
+                ]);
+            }
+            return Mapster_Map_Sources::save( $map_id, $body );
+        }
+
+    }
+
+    public function mapster_wp_maps_search_sources() {
+        register_rest_route( 'mapster-wp-maps', 'search-sources', array(
+            'methods'             => 'POST',
+            'callback'            => 'mapster_wp_maps_search_sources_cb',
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ) );
+        function mapster_wp_maps_search_sources_cb(  $request  ) {
+            $body = json_decode( $request->get_body(), true );
+            $type = sanitize_key( $body['type'] ?? '' );
+            $search = sanitize_text_field( $body['search'] ?? '' );
+            if ( !$type ) {
+                return new WP_Error('missing_type', 'Search type is required', [
+                    'status' => 400,
+                ]);
+            }
+            return Mapster_Map_Sources::search( $type, $search );
+        }
+
+    }
+
+    public function mapster_wp_maps_get_live_config() {
+        register_rest_route( 'mapster-wp-maps', 'map-live', array(
+            'methods'             => 'POST',
+            'callback'            => 'mapster_wp_maps_live_config',
+            'permission_callback' => function () {
+                return true;
+                // open to public
+            },
+        ) );
+        function mapster_wp_maps_live_config(  $request  ) {
+            $body = $request->get_body();
+            $decoded_post = json_decode( $body, true );
+            $post_id = $decoded_post['id'];
+            $overrides = $decoded_post['overrides'];
+            $features = $decoded_post['features'];
+            $feature_ids = getFeatureIDs( $features );
+            $response = createSdkResponse( $post_id, $feature_ids, $overrides );
+            $response['config']['element'] = "mapster-wp-maps";
+            return $response;
+            // return array($response);
+        }
+
+        function getFeatureIDs(  $features  ) {
+            $response = array();
+            $idsArray = $features['ids'];
+            $catsArray = $features['categories'];
+            $customArray = $features['custom'];
+            $customCatsArray = $features['custom_cats'];
+            if ( mapster_can_be_looped( $idsArray ) ) {
+                foreach ( $idsArray as $id ) {
+                    array_push( $response, $id );
+                }
+            }
+            // Check for category additions
+            if ( mapster_can_be_looped( $catsArray ) ) {
+                if ( count( $catsArray ) > 0 ) {
+                    $args = array(
+                        'post_type'      => array(
+                            'mapster-wp-user-sub',
+                            'mapster-wp-location',
+                            'mapster-wp-polygon',
+                            'mapster-wp-line'
+                        ),
+                        'tax_query'      => array(array(
+                            "taxonomy"         => "wp-map-category",
+                            "field"            => "term_id",
+                            "terms"            => $catsArray,
+                            "include_children" => false,
+                        )),
+                        'post_status'    => 'publish',
+                        'posts_per_page' => -1,
+                    );
+                    $the_query = new WP_Query($args);
+                    if ( $the_query->have_posts() ) {
+                        while ( $the_query->have_posts() ) {
+                            $the_query->the_post();
+                            array_push( $response, get_the_ID() );
+                        }
+                    }
+                }
+            }
+            // Check for custom additions
+            if ( mapster_can_be_looped( $customArray ) ) {
+                foreach ( $customArray as $id ) {
+                    array_push( $response, $id );
+                }
+            }
+            if ( mapster_can_be_looped( $customCatsArray ) ) {
+                if ( count( $customCatsArray ) > 0 ) {
+                    foreach ( $customCatsArray as $customCat ) {
+                        $term = get_term( $customCat );
+                        $args = array(
+                            'post_type'      => "any",
+                            'tax_query'      => array(array(
+                                "taxonomy"         => $term->taxonomy,
+                                "field"            => "term_id",
+                                "terms"            => $customCat,
+                                "include_children" => false,
+                            )),
+                            'post_status'    => 'publish',
+                            'posts_per_page' => -1,
+                        );
+                        $the_query = new WP_Query($args);
+                        if ( $the_query->have_posts() ) {
+                            while ( $the_query->have_posts() ) {
+                                $the_query->the_post();
+                                array_push( $response, get_the_ID() );
+                            }
+                        }
+                    }
+                }
+            }
+            ob_get_clean();
+            return $response;
+        }
+
+    }
+
     public function mapster_wp_maps_get_map() {
         register_rest_route( 'mapster-wp-maps', 'map', array(
             'methods'             => 'GET',
@@ -433,18 +863,21 @@ class Mapster_Wordpress_Maps_Admin_API {
             $minimized_line_data = array();
             $minimized_polygon_data = array();
             $categories = array();
+            $feature_ids_to_load = array();
             $progressive_map = false;
+            $returnSdk = ( isset( $params['sdk'] ) ? true : false );
             $testdata = false;
+            $cache_enabled = false;
             // Load one feature if it's specified
             if ( $single_feature_id || $feature_ids ) {
-                $features_to_fetch = array();
                 if ( $single_feature_id ) {
-                    array_push( $features_to_fetch, $single_feature_id );
+                    array_push( $feature_ids_to_load, $single_feature_id );
                 } else {
-                    $features_to_fetch = explode( ',', $feature_ids );
+                    $feature_ids_to_load = array_merge( $feature_ids_to_load, $feature_ids );
                 }
                 foreach ( $features_to_fetch as $single_feature ) {
                     $this_feature_id = intval( $single_feature );
+                    array_push( $feature_ids_to_load, $this_feature_id );
                     $single_feature_post_type = get_post_type( $this_feature_id );
                     $dataToAdd = mapster_getOnlyValues( $single_feature );
                     if ( $dataToAdd['data']['popup_style'] ) {
@@ -521,41 +954,50 @@ class Mapster_Wordpress_Maps_Admin_API {
                     // Normal feature additions
                     if ( mapster_can_be_looped( $minimized_data['locations'] ) ) {
                         foreach ( $minimized_data['locations'] as $location ) {
-                            $dataToAdd = mapster_getOnlyValues( $location->ID );
-                            if ( isset( $dataToAdd['data']['popup_style'] ) && $dataToAdd['data']['popup_style'] ) {
-                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                            array_push( $feature_ids_to_load, $location->ID );
+                            if ( !$returnSdk ) {
+                                $dataToAdd = mapster_getOnlyValues( $location->ID );
+                                if ( isset( $dataToAdd['data']['popup_style'] ) && $dataToAdd['data']['popup_style'] ) {
+                                    if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                        array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                        array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                    }
+                                    $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                 }
-                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                array_push( $minimized_location_data, $dataToAdd );
                             }
-                            array_push( $minimized_location_data, $dataToAdd );
                         }
                     }
                     if ( mapster_can_be_looped( $minimized_data['lines'] ) ) {
                         foreach ( $minimized_data['lines'] as $line ) {
-                            $dataToAdd = mapster_getOnlyValues( $line->ID );
-                            if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                            array_push( $feature_ids_to_load, $line->ID );
+                            if ( !$returnSdk ) {
+                                $dataToAdd = mapster_getOnlyValues( $line->ID );
+                                if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                    if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                        array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                        array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                    }
+                                    $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                 }
-                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                array_push( $minimized_line_data, $dataToAdd );
                             }
-                            array_push( $minimized_line_data, $dataToAdd );
                         }
                     }
                     if ( mapster_can_be_looped( $minimized_data['polygons'] ) ) {
                         foreach ( $minimized_data['polygons'] as $polygon ) {
-                            $dataToAdd = mapster_getOnlyValues( $polygon->ID );
-                            if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                            array_push( $feature_ids_to_load, $polygon->ID );
+                            if ( !$returnSdk ) {
+                                $dataToAdd = mapster_getOnlyValues( $polygon->ID );
+                                if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                    if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                        array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                        array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                    }
+                                    $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                 }
-                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
+                                array_push( $minimized_polygon_data, $dataToAdd );
                             }
-                            array_push( $minimized_polygon_data, $dataToAdd );
                         }
                     }
                     // Check for category additions
@@ -631,44 +1073,47 @@ class Mapster_Wordpress_Maps_Admin_API {
                                 }
                             }
                             foreach ( $all_posts as $post ) {
-                                $initialData = mapster_getOnlyValues( $post['post_id'] );
-                                $dataToAdd = mapster_organizeCustomData( $initialData );
-                                if ( $dataToAdd ) {
-                                    if ( isset( $dataToAdd['data']['location'] ) ) {
-                                        if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                            if ( $dataToAdd['data']['popup_style'] ) {
-                                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                array_push( $feature_ids_to_load, $post['post_id'] );
+                                if ( !$returnSdk ) {
+                                    $initialData = mapster_getOnlyValues( $post['post_id'] );
+                                    $dataToAdd = mapster_organizeCustomData( $initialData );
+                                    if ( $dataToAdd ) {
+                                        if ( isset( $dataToAdd['data']['location'] ) ) {
+                                            if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                                if ( $dataToAdd['data']['popup_style'] ) {
+                                                    if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                                        array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                                        array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                                    }
+                                                    $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                                 }
-                                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                             }
+                                            array_push( $minimized_location_data, $dataToAdd );
                                         }
-                                        array_push( $minimized_location_data, $dataToAdd );
-                                    }
-                                    if ( isset( $dataToAdd['data']['line'] ) ) {
-                                        if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                            if ( $dataToAdd['data']['popup_style'] ) {
-                                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                        if ( isset( $dataToAdd['data']['line'] ) ) {
+                                            if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                                if ( $dataToAdd['data']['popup_style'] ) {
+                                                    if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                                        array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                                        array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                                    }
+                                                    $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                                 }
-                                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                             }
+                                            array_push( $minimized_line_data, $dataToAdd );
                                         }
-                                        array_push( $minimized_line_data, $dataToAdd );
-                                    }
-                                    if ( isset( $dataToAdd['data']['polygon'] ) ) {
-                                        if ( isset( $dataToAdd['data']['popup_style'] ) ) {
-                                            if ( $dataToAdd['data']['popup_style'] ) {
-                                                if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
-                                                    array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
-                                                    array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                        if ( isset( $dataToAdd['data']['polygon'] ) ) {
+                                            if ( isset( $dataToAdd['data']['popup_style'] ) ) {
+                                                if ( $dataToAdd['data']['popup_style'] ) {
+                                                    if ( !in_array( $dataToAdd['data']['popup_style']['id'], $popup_styles_added ) ) {
+                                                        array_push( $popup_styles, $dataToAdd['data']['popup_style'] );
+                                                        array_push( $popup_styles_added, $dataToAdd['data']['popup_style']['id'] );
+                                                    }
+                                                    $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                                 }
-                                                $dataToAdd['data']['popup_style'] = $dataToAdd['data']['popup_style']['id'];
                                             }
+                                            array_push( $minimized_polygon_data, $dataToAdd );
                                         }
-                                        array_push( $minimized_polygon_data, $dataToAdd );
                                     }
                                 }
                             }
@@ -682,30 +1127,140 @@ class Mapster_Wordpress_Maps_Admin_API {
             ob_get_clean();
             // return json_decode('');
             //    $ch = curl_init();
-            //    curl_setopt($ch, CURLOPT_URL, "https://ycik.co.za/staging/wp-json/mapster-wp-maps/map?id=4309");
+            //    curl_setopt($ch, CURLOPT_URL, "https://ycik.co.za/staging/wp-json/mapster-wp-maps/map?id=4309&sdk=true");
             //    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             //    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
             //    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
             //    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             // $response = curl_exec($ch);
-            //    return json_decode($response);
-            $toReturn = array(
-                'id'                => $post_id,
-                'cats'              => $categories,
-                'popup_styles'      => $popup_styles,
-                'location_template' => mapster_getTemplate( 'location' ),
-                'line_template'     => mapster_getTemplate( 'line' ),
-                'polygon_template'  => mapster_getTemplate( 'polygon' ),
-                'map'               => mapster_remakeUsingTemplate( $minimized_data, 'map' ),
-                'locations'         => mapster_minimizeUsingTemplate( dynamic_popup_replace( $minimized_location_data ), 'location' ),
-                'lines'             => mapster_minimizeUsingTemplate( dynamic_popup_replace( $minimized_line_data ), 'line' ),
-                'polygons'          => mapster_minimizeUsingTemplate( dynamic_popup_replace( $minimized_polygon_data ), 'polygon' ),
-            );
-            return $toReturn;
+            //    $decoded_response = json_decode($response);
+            //    $decoded_response->config->element = "mapster-wp-maps-" . $post_id;
+            //    return $decoded_response;
+            if ( $returnSdk ) {
+                $sdk_response = createSdkResponse( $post_id, $feature_ids_to_load );
+                // Cache was enabled but the file was missing (never generated, or just
+                // invalidated by an edit) -- save this response so the next visitor
+                // gets the fast path instead of rebuilding it again from the DB.
+                if ( $cache_enabled && class_exists( 'Mapster_Wordpress_Maps_Pro_Admin_API' ) ) {
+                    ( new Mapster_Wordpress_Maps_Pro_Admin_API() )->mapster_write_map_cache( $post_id, $sdk_response );
+                }
+                return $sdk_response;
+            } else {
+                $toReturn = array(
+                    'id'                => $post_id,
+                    'cats'              => $categories,
+                    'popup_styles'      => $popup_styles,
+                    'location_template' => mapster_getTemplate( 'location' ),
+                    'line_template'     => mapster_getTemplate( 'line' ),
+                    'polygon_template'  => mapster_getTemplate( 'polygon' ),
+                    'map'               => mapster_remakeUsingTemplate( $minimized_data, 'map' ),
+                    'locations'         => mapster_minimizeUsingTemplate( dynamic_popup_replace( $minimized_location_data ), 'location' ),
+                    'lines'             => mapster_minimizeUsingTemplate( dynamic_popup_replace( $minimized_line_data ), 'line' ),
+                    'polygons'          => mapster_minimizeUsingTemplate( dynamic_popup_replace( $minimized_polygon_data ), 'polygon' ),
+                );
+                return $toReturn;
+            }
         }
 
     }
 
+}
+
+/// Returns the mtime of the map cache file, or false if it doesn't exist yet.
+function mapster_get_cache_date(  int $post_id  ) {
+    $file = trailingslashit( wp_upload_dir()['basedir'] ) . 'mapster/map-' . $post_id . '.json';
+    return ( file_exists( $file ) ? filemtime( $file ) : false );
+}
+
+// Returns {id, url} for an ACF image/file field stored as raw attachment ID in post meta.
+function mapster_format_loader_custom(  $raw_meta  ) {
+    $id = intval( $raw_meta );
+    if ( !$id ) {
+        return false;
+    }
+    $url = wp_get_attachment_url( $id );
+    $metadata = wp_get_attachment_metadata( $id );
+    return ( $url ? [
+        'id'         => $id,
+        'url'        => $url,
+        'dimensions' => array($metadata['width'], $metadata['height']),
+    ] : false );
+}
+
+// Parses textarea "property : Label\n..." into [{property, label}] for the frontend.
+function mapster_parse_additional_filters(  $value  ) : array {
+    if ( !$value || !is_string( $value ) ) {
+        return [];
+    }
+    $result = [];
+    foreach ( explode( "\n", trim( $value ) ) as $line ) {
+        $line = trim( $line );
+        if ( $line === '' ) {
+            continue;
+        }
+        $parts = explode( ':', $line, 2 );
+        if ( count( $parts ) === 2 ) {
+            $result[] = [
+                'property' => trim( $parts[0] ),
+                'label'    => trim( $parts[1] ),
+            ];
+        }
+    }
+    return $result;
+}
+
+// Resolves ACF excluded_categories value (term IDs or term objects) to [{value, label, taxonomy}].
+function mapster_resolve_category_terms(  $value  ) : array {
+    if ( !$value || !is_array( $value ) ) {
+        return [];
+    }
+    $result = [];
+    foreach ( $value as $item ) {
+        if ( is_object( $item ) && isset( $item->term_id ) ) {
+            $result[] = [
+                'value'    => $item->term_id,
+                'label'    => $item->name,
+                'taxonomy' => $item->taxonomy,
+            ];
+        } elseif ( is_numeric( $item ) ) {
+            $term = get_term( intval( $item ) );
+            if ( $term && !is_wp_error( $term ) ) {
+                $result[] = [
+                    'value'    => $term->term_id,
+                    'label'    => $term->name,
+                    'taxonomy' => $term->taxonomy,
+                ];
+            }
+        }
+    }
+    return $result;
+}
+
+// Normalises ACF user field output (array of user arrays or IDs) to the
+// [{value, label, email}] shape used by React Select on the frontend.
+function mapster_format_notify_users(  $value  ) : array {
+    if ( !$value || !is_array( $value ) ) {
+        return [];
+    }
+    return array_values( array_filter( array_map( function ( $user ) {
+        if ( is_numeric( $user ) ) {
+            $u = get_userdata( intval( $user ) );
+            return ( $u ? [
+                'value' => $u->ID,
+                'label' => $u->display_name,
+                'email' => $u->user_email,
+            ] : null );
+        }
+        $id = $user['ID'] ?? $user['id'] ?? null;
+        if ( !$id ) {
+            return null;
+        }
+        return [
+            'value' => intval( $id ),
+            'label' => $user['display_name'] ?? $user['user_login'] ?? '',
+            'email' => $user['user_email'] ?? '',
+        ];
+    }, $value ) ) );
 }
 
 function mapster_organizeCustomData(  $dataToAdd  ) {
@@ -750,38 +1305,41 @@ function dynamic_popup_replace(  $data  ) {
 }
 
 function replace_text_with_property_or_acf(  $post_id, $properties, $text  ) {
-    $new_text = $text;
-    preg_match_all( '#\\{(.*?)\\}#', $new_text, $matches );
-    foreach ( $matches[0] as $index => $match ) {
-        if ( isset( $properties[$matches[1][$index]] ) ) {
-            $new_text = str_replace( $match, $properties[$matches[1][$index]], $new_text );
-        } else {
-            if ( strpos( $match, "acf" ) !== false ) {
-                $acf_field_id = str_replace( "acf.", "", $matches[1][$index] );
-                $field_data = get_field_object( $acf_field_id, $post_id );
-                if ( $field_data ) {
-                    if ( isset( $field_data['choices'] ) ) {
-                        if ( is_array( $field_data['value'] ) ) {
-                            $arranged_values = array();
-                            foreach ( $field_data['value'] as $value ) {
-                                array_push( $arranged_values, $field_data['choices'][$value] );
+    if ( $text ) {
+        $new_text = $text;
+        preg_match_all( '#\\{(.*?)\\}#', $new_text, $matches );
+        foreach ( $matches[0] as $index => $match ) {
+            if ( isset( $properties[$matches[1][$index]] ) ) {
+                $new_text = str_replace( $match, $properties[$matches[1][$index]], $new_text );
+            } else {
+                if ( strpos( $match, "acf" ) !== false ) {
+                    $acf_field_id = str_replace( "acf.", "", $matches[1][$index] );
+                    $field_data = get_field_object( $acf_field_id, $post_id );
+                    if ( $field_data ) {
+                        if ( isset( $field_data['choices'] ) ) {
+                            if ( is_array( $field_data['value'] ) ) {
+                                $arranged_values = array();
+                                foreach ( $field_data['value'] as $value ) {
+                                    array_push( $arranged_values, $field_data['choices'][$value] );
+                                }
+                                $field_data = implode( ', ', $arranged_values );
+                            } else {
+                                $field_data = $field_data['choices'][$field_data['value']];
                             }
-                            $field_data = implode( ', ', $arranged_values );
                         } else {
-                            $field_data = $field_data['choices'][$field_data['value']];
+                            $field_data = $field_data['value'];
                         }
+                        $new_text = str_replace( $match, $field_data, $new_text );
                     } else {
-                        $field_data = $field_data['value'];
+                        $new_text = str_replace( $match, "", $new_text );
                     }
-                    $new_text = str_replace( $match, $field_data, $new_text );
-                } else {
-                    $new_text = str_replace( $match, "", $new_text );
                 }
             }
         }
+        $new_text = preg_replace( '/\\\\n/', "\n", $new_text );
+        return $new_text;
     }
-    $new_text = preg_replace( '/\\\\n/', "\n", $new_text );
-    return $new_text;
+    return $text;
 }
 
 function mapster_setGroup(  $field, $sub_fields, $post_id  ) {
@@ -947,226 +1505,6 @@ function mapster_getTemplate(  $type  ) {
         return mapster_arrange_fields( acf_get_fields( 'group_6163732e0426e' ), true );
     } elseif ( $type == 'polygon' ) {
         return mapster_arrange_fields( acf_get_fields( 'group_616379566202f' ), true );
-    }
-}
-
-// Organizing responses to have minimal output
-function mapster_returnPopupData(  $popup_id  ) {
-    $single_popup_style_data = array();
-    $popup_style_data = get_field_objects( $popup_id );
-    if ( mapster_can_be_looped( $popup_style_data ) ) {
-        foreach ( $popup_style_data as $key => $data ) {
-            $single_popup_style_data[$key] = $data['value'];
-        }
-    }
-    $single_popup_style_data['id'] = $popup_id;
-    return $single_popup_style_data;
-}
-
-function mapster_getPropertyList(  $data  ) {
-    $propertiesToReturn = array();
-    return $propertiesToReturn;
-}
-
-function mapster_getTermList(  $object_id  ) {
-    $terms = get_the_terms( $object_id, 'wp-map-category' );
-    $termsToReturn = array();
-    if ( mapster_can_be_looped( $terms ) ) {
-        foreach ( $terms as $term ) {
-            if ( metadata_exists( 'term', $term->term_id, 'term_order' ) ) {
-                $term->term_order = get_term_meta( $term->term_id, 'term_order' );
-            }
-        }
-        foreach ( $terms as $term ) {
-            $translated_term = $term;
-            if ( is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
-                $term_id = apply_filters(
-                    'wpml_object_id',
-                    $term->term_id,
-                    "wp-map-category",
-                    true
-                );
-                $translated_term = get_term( $term_id, 'wp-map-category' );
-            }
-            $thisTerm = array(
-                "id"         => $translated_term->term_id,
-                "name"       => $translated_term->name,
-                "slug"       => $translated_term->slug,
-                "term_order" => $translated_term->term_order,
-                "color"      => get_field( "color", 'wp-map-category_' . $translated_term->term_id ),
-                "icon"       => get_field( "icon", 'wp-map-category_' . $translated_term->term_id ),
-                "parent"     => $translated_term->parent,
-            );
-            array_push( $termsToReturn, $thisTerm );
-        }
-    }
-    return $termsToReturn;
-}
-
-function mapster_getOnlyValues(  $object_id  ) {
-    $field_object_data = get_field_objects( $object_id );
-    $single_feature_data = array(
-        "id"         => $object_id,
-        "slug"       => get_post_field( 'post_name', $object_id ),
-        "menu_order" => get_post_field( 'menu_order', $object_id ),
-        "permalink"  => get_permalink( $object_id ),
-        "title"      => get_the_title( $object_id ),
-        "content"    => get_the_content( null, null, $object_id ),
-        "categories" => mapster_getTermList( $object_id ),
-        "data"       => $field_object_data,
-    );
-    if ( mapster_can_be_looped( $field_object_data ) ) {
-        foreach ( $field_object_data as $key => $data ) {
-            $thisValue = $data['value'];
-            if ( is_string( $data['value'] ) && strpos( $data['value'], "FeatureCollection" ) !== false ) {
-                ini_set( 'serialize_precision', '-1' );
-                $thisGeoJSON = json_decode( $data['value'] );
-                $thisValue = array(
-                    'type'        => $thisGeoJSON->features[0]->geometry->type,
-                    'coordinates' => mapster_encode_coordinates( $thisGeoJSON->features[0]->geometry->coordinates ),
-                );
-            }
-            $single_feature_data['data'][$key] = $thisValue;
-            if ( $key == 'popup_style' ) {
-                if ( isset( $single_feature_data['data'][$key] ) && $single_feature_data['data'][$key] && $single_feature_data['data'][$key]->ID ) {
-                    $single_feature_data['data'][$key] = mapster_returnPopupData( $single_feature_data['data'][$key]->ID );
-                }
-            }
-            if ( $key == 'popup' ) {
-                $single_feature_data['data'][$key]['permalink'] = get_permalink( $object_id );
-                if ( $single_feature_data['data'][$key]['featured_image'] ) {
-                    $newImageData = array();
-                    $newImageData['id'] = $single_feature_data['data'][$key]['featured_image']['id'];
-                    $image_thumbnail_size = ( isset( $single_feature_data['data']['popup_style']['image_thumbnail_size'] ) ? $single_feature_data['data']['popup_style']['image_thumbnail_size'] : 'medium' );
-                    $newImageData['url'] = wp_get_attachment_image_url( $newImageData['id'], $image_thumbnail_size );
-                    $single_feature_data['data'][$key]['featured_image'] = $newImageData;
-                }
-            }
-            if ( $key == 'images' ) {
-                foreach ( $field_object_data[$key]['value'] as $image ) {
-                    $image_thumbnail_size = ( isset( $single_feature_data['data']['popup_style']['image_thumbnail_size'] ) ? $single_feature_data['data']['popup_style']['image_thumbnail_size'] : 'medium' );
-                    $thisAttachment = wp_get_attachment_image_src( $image['id'], $image_thumbnail_size );
-                    array_push( $single_feature_data['data']['popup']['images'], $thisAttachment[0] );
-                }
-            }
-            if ( $key === 'icon' ) {
-                $newImageData = array();
-                if ( $single_feature_data['data'][$key]['icon_properties']['icon-image'] ) {
-                    $newImageData['id'] = $single_feature_data['data'][$key]['icon_properties']['icon-image']['id'];
-                    $newImageData['url'] = $single_feature_data['data'][$key]['icon_properties']['icon-image']['url'];
-                    $newImageData['height'] = $single_feature_data['data'][$key]['icon_properties']['icon-image']['height'];
-                    $newImageData['width'] = $single_feature_data['data'][$key]['icon_properties']['icon-image']['width'];
-                    $single_feature_data['data'][$key]['icon_properties']['icon-image'] = $newImageData;
-                }
-                // $hoverImageData = array();
-                // if($single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image']) {
-                //   $hoverImageData['id'] = $single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image']['id'];
-                //   $hoverImageData['url'] = $single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image']['url'];
-                //   $single_feature_data['data'][$key]['icon_properties']['hover_effects']['hover_image'] = $hoverImageData;
-                // }
-            }
-        }
-    }
-    return $single_feature_data;
-}
-
-// Turning coordinates into encoded
-function mapster_encode_coordinates(  $coordinates  ) {
-    // $poly_encoder = new Polyline();
-    // $coordinates_to_return = array();
-    // if(is_numeric($coordinates[0])) { // It's a point, don't encode
-    //   $coordinates_to_return = $coordinates;
-    // } else if(is_array($coordinates[0])) { // Line, MultiLine, Poly, MultiPoly
-    //   if(is_numeric($coordinates[0][0])) { // Line
-    //     $coordinates_to_return = $poly_encoder->encode($coordinates);
-    //   }
-    //   if(is_array($coordinates[0][0])) { // Multiline, Poly, MultiPoly
-    //     if(is_numeric($coordinates[0][0][0])) { // Multiline, Poly
-    //       foreach($coordinates as $pointSet) {
-    //         array_push($coordinates_to_return, $poly_encoder->encode($pointSet));
-    //       }
-    //     }
-    //     if(is_array($coordinates[0][0][0])) { // MultiPoly
-    //       foreach($coordinates as $polyOrHoleCollection) {
-    //         $polyOrHoleHolder = array();
-    //         foreach($polyOrHoleCollection as $polyOrHole) {
-    //           array_push($polyOrHoleHolder, $poly_encoder->encode($polyOrHole));
-    //         }
-    //         array_push($coordinates_to_return, $polyOrHoleHolder);
-    //       }
-    //     }
-    //   }
-    // }
-    // return $coordinates_to_return;
-    return $coordinates;
-}
-
-// Organizing template fields
-function mapster_arrange_fields(  $field_group, $isFeature  ) {
-    $toReturn = array();
-    if ( $isFeature ) {
-        $toReturn['permalink'] = false;
-        $toReturn['title'] = false;
-        $toReturn['content'] = false;
-        $toReturn['categories'] = false;
-        $toReturn['slug'] = false;
-        $toReturn['id'] = false;
-        $toReturn['menu_order'] = false;
-        $toReturn['data'] = array();
-        if ( mapster_can_be_looped( $field_group ) ) {
-            foreach ( $field_group as $field ) {
-                if ( $field['name'] !== "" ) {
-                    $toReturn['data'][$field['name']] = mapster_arrange_sub_fields( $field );
-                }
-            }
-        }
-        // Get popup stuff too
-        $popup_fields = acf_get_fields( 'group_6163d357655f4' );
-        if ( mapster_can_be_looped( $popup_fields ) ) {
-            foreach ( $popup_fields as $field ) {
-                $toReturn['data'][$field['name']] = mapster_arrange_sub_fields( $field );
-            }
-        }
-        $toReturn['data']['popup']['permalink'] = false;
-    } else {
-        foreach ( $field_group as $field ) {
-            if ( $field['name'] !== "" ) {
-                $toReturn[$field['name']] = mapster_arrange_sub_fields( $field );
-            }
-        }
-    }
-    return $toReturn;
-}
-
-function mapster_arrange_sub_fields(  $field  ) {
-    $toReturn = array();
-    if ( isset( $field['sub_fields'] ) ) {
-        if ( mapster_can_be_looped( $field['sub_fields'] ) ) {
-            foreach ( $field['sub_fields'] as $sub_field ) {
-                $value = mapster_arrange_sub_fields( $sub_field );
-                $toReturn[$sub_field['name']] = $value;
-            }
-        }
-        return $toReturn;
-    } else {
-        // Handler for true/false
-        if ( $field['type'] == 'true_false' ) {
-            return ( $field['default_value'] == 0 ? false : true );
-        } else {
-            if ( !isset( $field['default_value'] ) ) {
-                return null;
-            } else {
-                return $field['default_value'];
-            }
-        }
-    }
-}
-
-function mapster_can_be_looped(  $variable  ) {
-    if ( is_array( $variable ) || is_object( $variable ) ) {
-        return true;
-    } else {
-        return false;
     }
 }
 

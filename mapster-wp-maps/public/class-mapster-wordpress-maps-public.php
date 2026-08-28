@@ -166,6 +166,7 @@ class Mapster_Wordpress_Maps_Public {
                 wp_reset_postdata();
             }
         }
+        $map_provider = get_field( 'map_type', $atts['id'] )['map_provider'];
         $i8ln = new Mapster_Wordpress_Maps_i18n();
         $injectedParams = array(
             'strings'                   => $i8ln->get_mapster_strings()['admin_js'],
@@ -173,6 +174,7 @@ class Mapster_Wordpress_Maps_Public {
             'activated'                 => ( mwm_fs()->can_use_premium_code() ? '1' : '0' ),
             'rest_url'                  => get_rest_url(),
             'qd'                        => $this->mapster_get_rest_url_delimiter(),
+            'map_provider'              => ( $map_provider ? $map_provider : "maplibre" ),
             'directory'                 => plugin_dir_url( __FILE__ ),
             'mapbox_access_token'       => $access_token,
             'user_submission_permalink' => $user_submission_template,
@@ -181,7 +183,6 @@ class Mapster_Wordpress_Maps_Public {
             'mapster_default_zoom'      => $default_zoom,
             'ip'                        => $_SERVER['REMOTE_ADDR'],
         );
-        $map_provider = get_field( 'map_type', $atts['id'] )['map_provider'];
         $model_3d_library = get_field( 'load_3d_model_libraries', $atts['id'] );
         $elevation_chart_enabled = get_field( 'elevation_line_chart_enable_elevation_chart', $atts['id'] );
         // Check for required dependencies
@@ -211,8 +212,8 @@ class Mapster_Wordpress_Maps_Public {
         // 	$searchbox_enabled = true;
         // }
         $last_dependency = 'jquery';
-        if ( MAPSTER_LOCAL_TESTING ) {
-            $this->mapster_wordpress_maps_script_loading_dev(
+        if ( MAPSTER_LOCAL_TESTING && isset( $_GET['legacy'] ) ) {
+            $this->enqueue_legacy_dev_scripts(
                 $last_dependency,
                 $map_provider,
                 $settings_page_id,
@@ -222,72 +223,10 @@ class Mapster_Wordpress_Maps_Public {
                 $model_3d_library,
                 $elevation_chart_enabled,
                 $store_locator_enabled,
-                $injectedParams,
-                $atts
+                $injectedParams
             );
         } else {
-            $scripts_to_load = "";
-            if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
-                $scripts_to_load = "maplibre-mwp";
-            }
-            if ( $map_provider === 'mapbox' ) {
-                $scripts_to_load = "mapbox-mwp";
-            }
-            if ( $map_provider === 'google-maps' ) {
-                $google_api_key = get_field( 'google_maps_api_key', $settings_page_id );
-                wp_enqueue_script(
-                    'mapster_map_' . $map_provider,
-                    "https://maps.googleapis.com/maps/api/js?key=" . $google_api_key . "&libraries=places",
-                    array($last_dependency),
-                    $this->version
-                );
-                $last_dependency = 'mapster_map_' . $map_provider;
-                $scripts_to_load = "google-mwp";
-            }
-            if ( $directions_enabled || $geocoder_enabled ) {
-                if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
-                    $scripts_to_load = "maplibre-geocoding-mwp";
-                }
-                if ( $map_provider === 'mapbox' ) {
-                    $scripts_to_load = "mapbox-geocoding-mwp";
-                }
-            }
-            if ( $model_3d_library ) {
-                if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
-                    $scripts_to_load = "maplibre-threebox-mwp";
-                }
-                if ( $map_provider === 'mapbox' ) {
-                    $scripts_to_load = "mapbox-threebox-mwp";
-                }
-            }
-            if ( $elevation_chart_enabled ) {
-                $scripts_to_load = "mapbox-chart-mwp";
-            }
-            if ( $store_locator_enabled ) {
-                wp_enqueue_style( 'mapster_map_store_locator' );
-            }
-            // DO NOT UNCOMMENT
-            // if($encoding_enabled) {
-            // wp_enqueue_script('mapster_map_polyline_encoding', plugin_dir_url( __FILE__ ) . "../admin/js/vendor/geojson-polyline.min.js", array($last_dependency), $this->version);
-            // $last_dependency = 'mapster_map_polyline_encoding';
-            // }
-            wp_register_script(
-                $this->plugin_name,
-                plugin_dir_url( __FILE__ ) . '../admin/js/dist/compiled/' . $scripts_to_load . '.js',
-                array($last_dependency),
-                $this->version,
-                true
-            );
-            wp_localize_script( $this->plugin_name, 'mapster_params', $injectedParams );
-            wp_enqueue_script( $this->plugin_name );
-            wp_register_style(
-                $this->plugin_name,
-                plugin_dir_url( __FILE__ ) . '../public/css/dist/' . $scripts_to_load . '.css',
-                array(),
-                $this->version,
-                'all'
-            );
-            wp_enqueue_style( $this->plugin_name );
+            $this->enqueue_sdk_scripts( $injectedParams );
         }
         $single_feature_id = "";
         if ( isset( $atts["single_feature_id"] ) ) {
@@ -320,15 +259,26 @@ class Mapster_Wordpress_Maps_Public {
                 $loader = "<svg width='38' height='38' viewBox='0 0 38 38' xmlns='https://www.w3.org/2000/svg' stroke='#333'> <g fill='none' fill-rule='evenodd'> <g transform='translate(1 1)' stroke-width='2'> <circle stroke-opacity='.5' cx='18' cy='18' r='18'/> <path d='M36 18c0-9.94-8.06-18-18-18'> <animateTransform attributeName='transform' type='rotate' from='0 18 18' to='360 18 18' dur='1s' repeatCount='indefinite'/> </path> </g> </g> </svg>";
             }
         }
-        return "\n\t\t\t\t" . $map_container_html . "\n\t\t\t\t<div class='mapster-wp-maps-loader-container' style='height: " . esc_attr( $map_div_height ) . ";width: " . esc_attr( $map_div_width ) . ";'>\n\t\t\t\t\t<div class='mapster-map-loader-initial' style='background-color: " . $loader_background . "'>\n\t\t\t\t\t\t" . $loader . "\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div class='mapster-wp-maps'\n\t\t\t\t\tid='mapster-wp-maps-" . esc_attr( $atts['id'] ) . "'\n\t\t\t\t\tdata-id='" . esc_attr( $atts['id'] ) . "'\n\t\t\t\t\tdata-latitude='" . esc_attr( ( isset( $atts['latitude'] ) ? $atts['latitude'] : "null" ) ) . "'\n\t\t\t\t\tdata-longitude='" . esc_attr( ( isset( $atts['longitude'] ) ? $atts['longitude'] : "null" ) ) . "'\n\t\t\t\t\tdata-zoom='" . esc_attr( ( isset( $atts['zoom'] ) ? $atts['zoom'] : "null" ) ) . "'\n\t\t\t\t\tdata-single_feature_id='" . esc_attr( $single_feature_id ) . "'\n\t\t\t\t\tdata-feature_ids='" . esc_attr( $feature_ids ) . "'>\n\t\t\t\t</div>\n\t\t\t\t" . $compare_map_html . "\n\t\t\t</div>\n\t\t";
+        return "\n\t\t\t\t" . $map_container_html . "\n\t\t\t\t<style>\n\t\t\t\t.mapster-map-loader-initial {\n    \t\t  position: absolute;\n          top: 0;\n          bottom: 0;\n          width: 100%;\n          background: rgba(255, 255, 255, 0.6);\n          text-align: center;\n          padding-top: 50px;\n\t\t\t\t}\n\t\t\t\t</style>\n\t\t\t\t<div class='mapster-wp-maps-loader-container' style='height: " . esc_attr( $map_div_height ) . ";width: " . esc_attr( $map_div_width ) . ";'>\n\t\t\t\t\t<div class='mapster-map-loader-initial' style='background-color: " . $loader_background . "'>\n\t\t\t\t\t\t" . $loader . "\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div class='mapster-wp-maps'\n\t\t\t\t\tid='mapster-wp-maps-" . esc_attr( $atts['id'] ) . "'\n\t\t\t\t\tdata-id='" . esc_attr( $atts['id'] ) . "'\n\t\t\t\t\tdata-latitude='" . esc_attr( ( isset( $atts['latitude'] ) ? $atts['latitude'] : "null" ) ) . "'\n\t\t\t\t\tdata-longitude='" . esc_attr( ( isset( $atts['longitude'] ) ? $atts['longitude'] : "null" ) ) . "'\n\t\t\t\t\tdata-zoom='" . esc_attr( ( isset( $atts['zoom'] ) ? $atts['zoom'] : "null" ) ) . "'\n\t\t\t\t\tdata-single_feature_id='" . esc_attr( $single_feature_id ) . "'\n\t\t\t\t\tdata-feature_ids='" . esc_attr( $feature_ids ) . "'>\n\t\t\t\t</div>\n\t\t\t\t" . $compare_map_html . "\n\t\t\t</div>\n\t\t";
     }
 
-    /**
-     * Strictly for faster testing during development
-     *
-     * @since    1.0.0
-     */
-    public function mapster_wordpress_maps_script_loading_dev(
+    private function enqueue_sdk_scripts( $injectedParams ) {
+        wp_register_script(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) . '../admin/js/sdk/linking-script.js',
+            array('jquery'),
+            $this->version,
+            true
+        );
+        wp_localize_script( $this->plugin_name, 'mapster_params', array_merge( $injectedParams, array(
+            'sdk_base_url' => plugin_dir_url( __FILE__ ) . '../admin/js/sdk/dist/',
+            'is_pro'       => ( function_exists( 'mwm_fs' ) && mwm_fs()->can_use_premium_code() ? 'true' : 'false' ),
+            'is_dev'       => ( defined( 'MAPSTER_LOCAL_TESTING' ) && MAPSTER_LOCAL_TESTING ? 'true' : 'false' ),
+        ) ) );
+        wp_enqueue_script( $this->plugin_name );
+    }
+
+    private function enqueue_legacy_compiled_scripts(
         $last_dependency,
         $map_provider,
         $settings_page_id,
@@ -338,8 +288,78 @@ class Mapster_Wordpress_Maps_Public {
         $model_3d_library,
         $elevation_chart_enabled,
         $store_locator_enabled,
-        $injectedParams,
-        $atts
+        $injectedParams
+    ) {
+        $scripts_to_load = "";
+        if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
+            $scripts_to_load = "maplibre-mwp";
+        }
+        if ( $map_provider === 'mapbox' ) {
+            $scripts_to_load = "mapbox-mwp";
+        }
+        if ( $map_provider === 'google-maps' ) {
+            $google_api_key = get_field( 'google_maps_api_key', $settings_page_id );
+            wp_enqueue_script(
+                'mapster_map_' . $map_provider,
+                "https://maps.googleapis.com/maps/api/js?key=" . $google_api_key . "&libraries=places",
+                array($last_dependency),
+                $this->version
+            );
+            $last_dependency = 'mapster_map_' . $map_provider;
+            $scripts_to_load = "google-mwp";
+        }
+        if ( $directions_enabled || $geocoder_enabled ) {
+            if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
+                $scripts_to_load = "maplibre-geocoding-mwp";
+            }
+            if ( $map_provider === 'mapbox' ) {
+                $scripts_to_load = "mapbox-geocoding-mwp";
+            }
+        }
+        if ( $model_3d_library ) {
+            if ( $map_provider === 'maplibre' || $map_provider === 'custom-image' ) {
+                $scripts_to_load = "maplibre-threebox-mwp";
+            }
+            if ( $map_provider === 'mapbox' ) {
+                $scripts_to_load = "mapbox-threebox-mwp";
+            }
+        }
+        if ( $elevation_chart_enabled ) {
+            $scripts_to_load = "mapbox-chart-mwp";
+        }
+        if ( $store_locator_enabled ) {
+            wp_enqueue_style( 'mapster_map_store_locator' );
+        }
+        wp_register_script(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/compiled/' . $scripts_to_load . '.js',
+            array($last_dependency),
+            $this->version,
+            true
+        );
+        wp_localize_script( $this->plugin_name, 'mapster_params', $injectedParams );
+        wp_enqueue_script( $this->plugin_name );
+        wp_register_style(
+            $this->plugin_name,
+            plugin_dir_url( __FILE__ ) . '../public/css/legacy/' . $scripts_to_load . '.css',
+            array(),
+            $this->version,
+            'all'
+        );
+        wp_enqueue_style( $this->plugin_name );
+    }
+
+    private function enqueue_legacy_dev_scripts(
+        $last_dependency,
+        $map_provider,
+        $settings_page_id,
+        $directions_enabled,
+        $geocoder_enabled,
+        $compare_enabled,
+        $model_3d_library,
+        $elevation_chart_enabled,
+        $store_locator_enabled,
+        $injectedParams
     ) {
         wp_register_style(
             'mapster_map_mapbox_css',
@@ -502,114 +522,114 @@ class Mapster_Wordpress_Maps_Public {
         }
         wp_enqueue_script(
             $this->plugin_name . "-ElevationControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/ElevationControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/ElevationControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-ElevationControl";
         wp_enqueue_script(
             $this->plugin_name . "-StyleControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/StyleControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/StyleControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-StyleControl";
         wp_enqueue_script(
             $this->plugin_name . "-LayerControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/LayerControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/LayerControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-LayerControl";
         wp_enqueue_script(
             $this->plugin_name . "-ControlMenu",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/ControlMenu.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/ControlMenu.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-ControlMenu";
         wp_enqueue_script(
             $this->plugin_name . "-CustomHTMLControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CustomHTMLControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/CustomHTMLControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-CustomHTMLControl";
         wp_enqueue_script(
             $this->plugin_name . "-DownloadControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/DownloadControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/DownloadControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-DownloadControl";
-        // wp_enqueue_script($this->plugin_name . "-MapsterSearchBoxControl", plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/MapsterSearchBoxControl.js', array($last_dependency), $this->version);
+        // wp_enqueue_script($this->plugin_name . "-MapsterSearchBoxControl", plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/MapsterSearchBoxControl.js', array($last_dependency), $this->version);
         // $last_dependency = $this->plugin_name . "-MapsterSearchBoxControl";
         wp_enqueue_script(
             $this->plugin_name . "-CategoryControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/CategoryControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/CategoryControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-CategoryControl";
         wp_enqueue_script(
             $this->plugin_name . "-ListControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/ListControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/ListControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-ListControl";
         wp_enqueue_script(
             $this->plugin_name . "-PitchToggle",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/PitchToggle.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/PitchToggle.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-PitchToggle";
         wp_enqueue_script(
             $this->plugin_name . "-PrintControl",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/controls/PrintControl.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/controls/PrintControl.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-PrintControl";
         wp_enqueue_script(
             $this->plugin_name . "-constants",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterConstants.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterConstants.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-constants";
         wp_enqueue_script(
             $this->plugin_name . "-helpers",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterHelpers.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterHelpers.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-helpers";
         wp_enqueue_script(
             $this->plugin_name . "-core",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterCore.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterCore.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-core";
         wp_enqueue_script(
             $this->plugin_name . "-container",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterContainer.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterContainer.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-container";
         wp_enqueue_script(
             $this->plugin_name . "-map",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterMap.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterMap.js',
             array($last_dependency),
             $this->version
         );
         $last_dependency = $this->plugin_name . "-map";
         wp_register_script(
             $this->plugin_name . "-main-js",
-            plugin_dir_url( __FILE__ ) . '../admin/js/dev/MapsterLoader.js',
+            plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/MapsterLoader.js',
             array($last_dependency),
             $this->version,
             true
@@ -631,35 +651,35 @@ class Mapster_Wordpress_Maps_Public {
             $last_dependency = $this->plugin_name . "-google-clustering";
             wp_enqueue_script(
                 $this->plugin_name . "-google-category-control",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/CategoryControlGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/CategoryControlGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-google-category-control";
             wp_enqueue_script(
                 $this->plugin_name . "-google-list-control",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/ListControlGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/ListControlGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-google-list-control";
             wp_enqueue_script(
                 $this->plugin_name . "-core-google",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/MapsterCoreGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/MapsterCoreGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-core-google";
             wp_enqueue_script(
                 $this->plugin_name . "-helpers-google",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/MapsterHelpersGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/MapsterHelpersGoogle.js',
                 array($last_dependency),
                 $this->version
             );
             $last_dependency = $this->plugin_name . "-helpers-google";
             wp_enqueue_script(
                 $this->plugin_name . "-map-google",
-                plugin_dir_url( __FILE__ ) . '../admin/js/dev/google/MapsterMapGoogle.js',
+                plugin_dir_url( __FILE__ ) . '../admin/js/legacy/dev/google/MapsterMapGoogle.js',
                 array($last_dependency),
                 $this->version
             );
