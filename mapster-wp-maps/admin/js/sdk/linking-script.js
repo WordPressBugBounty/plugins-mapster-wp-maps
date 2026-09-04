@@ -38,8 +38,16 @@
          $('.mapster-wp-maps').toArray(),
          async (element) => {
            const post_id = element.id.replace('mapster-wp-maps-', '');
-           const data = await fetch(`${window.mapster_params.rest_url}mapster-wp-maps/map${window.mapster_params.qd}id=${post_id}&sdk=true`).then(r => r.json());
-           return { config: data.config, features: data.features };
+           const single_feature_id = $(`#${element.id}`).data('single_feature_id') !== "" ? $(`#${element.id}`).data('single_feature_id') : false;
+           const feature_ids = $(`#${element.id}`).data('feature_ids') !== "" ? $(`#${element.id}`).data('feature_ids') : false;
+           const singleFeatureQueryString = single_feature_id ? `&single_feature_id=${single_feature_id}` : '';
+           const featuresQueryString = feature_ids ? `&feature_ids=${feature_ids}` : '';
+           const data = await fetch(`${window.mapster_params.rest_url}mapster-wp-maps/map${window.mapster_params.qd}id=${post_id}&sdk=true${singleFeatureQueryString}${featuresQueryString}`).then(r => r.json());
+           return {
+             config: data.config,
+             features: data.features,
+             paid : window.mapster_params.is_pro === "true"
+           };
          }
        );
      });
@@ -59,7 +67,6 @@
               }
           });
 
-          console.log(document.body)
           observer.observe(document.body, {
               childList: true,
               subtree: true

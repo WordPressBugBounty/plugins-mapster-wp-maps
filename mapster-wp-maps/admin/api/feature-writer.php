@@ -185,14 +185,20 @@ class Mapster_Feature_Writer {
 
   /**
    * Write all writable fields from a feature array to ACF.
-   * Does NOT change geometry type (location_style / polygon_style).
    *
-   * @param bool $is_new  Skip geometry-type write guard (already set in create_feature).
+   * @param bool $is_new  True when called from create_feature() (style field already set there).
    */
   public function write_feature_to_acf($post_id, $feature, $is_new = false) {
     $type = $feature['metadata']['type'] ?? null;
     $info = self::TYPE_INFO[$type] ?? null;
     if (!$info) return;
+
+    // Style field (marker/circle/label/3d-model, fill/fill-extrusion/etc.) — lets
+    // the editor switch a feature's type after creation. Skipped on create since
+    // create_feature() already set it before defaults/geometry are written.
+    if (!$is_new && $info['style_field']) {
+      update_field($info['style_field'], $info['style_value'], $post_id);
+    }
 
     // Post title
     $title = $feature['metadata']['title'] ?? null;

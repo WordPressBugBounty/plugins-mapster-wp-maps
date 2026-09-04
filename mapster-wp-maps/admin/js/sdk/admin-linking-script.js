@@ -50,9 +50,15 @@
 
     const map = new mapster.MapInstance();
 
+    data.config.layout.ignore_container = false;
+    data.config.layout.height = '400';
+    data.config.layout.height_units = 'px';
+    data.config.layout.full_page = false;
+
     map.init({
       config: data.config,
-      features: data.features
+      features: data.features,
+      paid : window.mapster_params.is_pro === "true"
     });
 
     return map;

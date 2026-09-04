@@ -848,7 +848,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             $post_id = intval( $params['id'] );
             $ignore_cache = $params['ignore_cache'];
             $single_feature_id = ( isset( $params['single_feature_id'] ) ? intval( $params['single_feature_id'] ) : false );
-            $feature_ids = ( isset( $params['feature_ids'] ) ? $params['feature_ids'] : false );
+            $feature_ids = ( isset( $params['feature_ids'] ) ? explode( ',', $params['feature_ids'] ) : false );
             $acf_data = get_field_objects( $post_id );
             $minimized_data = array();
             // Top level properties
