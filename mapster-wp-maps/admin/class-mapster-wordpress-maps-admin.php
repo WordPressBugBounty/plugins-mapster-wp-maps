@@ -359,6 +359,7 @@ class Mapster_Wordpress_Maps_Admin {
         );
         wp_localize_script( $this->plugin_name, 'mapster_params', array_merge( $injectedParams, array(
             'sdk_base_url' => plugin_dir_url( __FILE__ ) . '../admin/js/sdk/dist/',
+            'sdk_version'  => $this->version,
             'is_pro'       => ( function_exists( 'mwm_fs' ) && mwm_fs()->can_use_premium_code() ? 'true' : 'false' ),
             'is_dev'       => ( defined( 'MAPSTER_LOCAL_TESTING' ) && MAPSTER_LOCAL_TESTING ? 'true' : 'false' ),
         ) ) );

@@ -1524,7 +1524,7 @@ function getFeatures(  $feature_ids_to_load  ) {
             $feat_carbon_props = null;
             if ( mwm_fs()->is__premium_only() && mwm_fs()->can_use_premium_code() ) {
                 $feat_carbon_props = [];
-                foreach ( carbon_get_post_meta( $post_id, 'mapster_custom_properties' ) as $property ) {
+                foreach ( mapster_get_custom_properties( $post_id ) as $property ) {
                     $feat_carbon_props[$property['property_name']] = $property['property_value'];
                 }
             }
@@ -1816,6 +1816,40 @@ function getSubmissionURL() {
     return $url;
 }
 
+/**
+ * Reads the 'mapster_custom_properties' Carbon Fields complex field straight out of
+ * the already-primed WP meta cache instead of going through Carbon's storage layer,
+ * which always issues its own LIKE-pattern SQL query and never consults the cache
+ * (WP's object cache has no wildcard-key lookup for Carbon to use). The field's
+ * storage keys follow Carbon's documented scheme `_mapster_custom_properties|{index}|{property}`,
+ * so they can be reconstructed from get_post_meta() with no DB hit when the cache is warm.
+ * Falls back to carbon_get_post_meta() if nothing matches, to cover posts whose data is
+ * still in an older Carbon storage format that only Carbon's own migration logic reads.
+ */
+function mapster_get_custom_properties(  $post_id  ) {
+    $all_meta = get_post_meta( $post_id );
+    $properties = array();
+    $has_unrecognized_key = false;
+    foreach ( $all_meta as $key => $value ) {
+        if ( strpos( $key, '_mapster_custom_properties' ) !== 0 ) {
+            continue;
+        }
+        if ( preg_match( '/^_mapster_custom_properties\\|(\\d+)\\|(property_name|property_value)$/', $key, $matches ) ) {
+            $properties[(int) $matches[1]][$matches[2]] = $value[0];
+        } else {
+            $has_unrecognized_key = true;
+        }
+    }
+    if ( empty( $properties ) && $has_unrecognized_key ) {
+        // Keys exist under this post but none matched the current storage format --
+        // likely an older Carbon Fields storage scheme; let Carbon's own migration
+        // logic read it instead of silently returning nothing.
+        return carbon_get_post_meta( $post_id, 'mapster_custom_properties' );
+    }
+    ksort( $properties );
+    return array_values( $properties );
+}
+
 function getAdditionalMetadata(  $acf_keys, $post_id  ) {
     $all_meta = get_post_meta( $post_id );
     $result = [];
@@ -2043,10 +2077,15 @@ function hasCoordinates(  $data  ) {
 
 function getPopupStyles(  $feature_ids_to_load  ) {
     $toReturn = array();
+    $seen_popup_ids = array();
     foreach ( $feature_ids_to_load as $post_id ) {
         $popup_style = get_field( "popup_style", $post_id );
         if ( $popup_style ) {
             $popup_id = $popup_style->ID;
+            if ( isset( $seen_popup_ids[$popup_id] ) ) {
+                continue;
+            }
+            $seen_popup_ids[$popup_id] = true;
             array_push( $toReturn, array(
                 "id"       => $popup_id,
                 "sections" => array(

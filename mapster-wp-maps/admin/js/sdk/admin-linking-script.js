@@ -37,14 +37,15 @@
     } else {
       const base_url = window.mapster_params.sdk_base_url;
       const free = window.mapster_params.is_pro === "true" ? "pro" : "free";
+      const ver = window.mapster_params.sdk_version ? `?ver=${window.mapster_params.sdk_version}` : "";
       if (mapProvider === "maplibre" || mapProvider === "custom-image") {
-        mapster = await import(`${base_url}/${free}/mapster-maplibre-${free}.js`);
+        mapster = await import(`${base_url}/${free}/mapster-maplibre-${free}.js${ver}`);
       }
       if (mapProvider === "mapbox") {
-        mapster = await import(`${base_url}/${free}/mapster-mapbox-${free}.js`);
+        mapster = await import(`${base_url}/${free}/mapster-mapbox-${free}.js${ver}`);
       }
       if (mapProvider === "google-maps") {
-        mapster = await import(`${base_url}/${free}/mapster-google-${free}.js`);
+        mapster = await import(`${base_url}/${free}/mapster-google-${free}.js${ver}`);
       }
     }
 

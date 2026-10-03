@@ -21,14 +21,15 @@
     } else {
       const base_url = window.mapster_params.sdk_base_url;
       const free = window.mapster_params.is_pro === "true" ? "pro" : "free";
+      const ver = window.mapster_params.sdk_version ? `?ver=${window.mapster_params.sdk_version}` : "";
       if (window.mapster_params.map_provider === "maplibre" || window.mapster_params.map_provider === "custom-image") {
-        mapster = await import(`${base_url}/${free}/mapster-maplibre-${free}.js`);
+        mapster = await import(`${base_url}/${free}/mapster-maplibre-${free}.js${ver}`);
       }
       if (window.mapster_params.map_provider === "mapbox") {
-        mapster = await import(`${base_url}/${free}/mapster-mapbox-${free}.js`);
+        mapster = await import(`${base_url}/${free}/mapster-mapbox-${free}.js${ver}`);
       }
       if (window.mapster_params.map_provider === "google-maps") {
-        mapster = await import(`${base_url}/${free}/mapster-google-${free}.js`);
+        mapster = await import(`${base_url}/${free}/mapster-google-${free}.js${ver}`);
       }
     }
     // Public

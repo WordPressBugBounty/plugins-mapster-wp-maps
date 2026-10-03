@@ -4,7 +4,7 @@ Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
 Tested up to: 7.0
-Stable tag: 2.0.4
+Stable tag: 2.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -220,6 +220,13 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 2.0.5 =
+* Cache busting
+* Cluster clicking fixes
+* Patchstack vulnerability patched
+* DOMPurify updated
+* De-duping popup template response
+* Fix with globe bug in Google Maps
 = 1.23.0 =
 * Improving parsing in custom JSON
 * Adding font color selection to clusters

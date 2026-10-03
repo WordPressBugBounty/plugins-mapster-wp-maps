@@ -1125,7 +1125,9 @@ class Mapster_Wordpress_Maps_Admin_API {
                 }
             }
             ob_get_clean();
-            // return json_decode('');
+            // $decoded_response = json_decode('');
+            // $decoded_response->config->element = "mapster-wp-maps-" . $post_id;
+            // return $decoded_response;
             //    $ch = curl_init();
             //    curl_setopt($ch, CURLOPT_URL, "https://ycik.co.za/staging/wp-json/mapster-wp-maps/map?id=4309&sdk=true");
             //    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
