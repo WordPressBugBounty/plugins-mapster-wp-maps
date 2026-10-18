@@ -132,14 +132,75 @@ function mapster_build_flat_defaults(  $fields, $prefix = ''  ) {
     return $result;
 }
 
+// Recursively flattens ACF field definitions into a compound-key => {type, return_format, multiple}
+// map, using the same name-joining rule as mapster_build_flat_defaults (so a key present here is
+// always a true leaf field, never a group/repeater whose value is assembled by ACF at read time).
+function mapster_build_flat_field_meta(  $fields, $prefix, &$out  ) {
+    foreach ( $fields as $field ) {
+        $key = ( $prefix !== '' ? $prefix . '_' . $field['name'] : $field['name'] );
+        if ( !empty( $field['sub_fields'] ) ) {
+            mapster_build_flat_field_meta( $field['sub_fields'], $key, $out );
+        } else {
+            $out[$key] = [
+                'type'          => $field['type'],
+                'return_format' => $field['return_format'] ?? null,
+                'multiple'      => $field['multiple'] ?? false,
+            ];
+        }
+    }
+}
+
+// Whitelist of ACF field types (and, for some, specific settings) whose get_field() output is
+// byte-identical to the raw postmeta value, verified against includes/acf/includes/fields/*:
+// - text, number, url: no load_value/format_value override at all (the field class defines no
+//   format_value method, so acf_field::add_field_filter()'s is_callable() guard never registers
+//   one — the filter is a no-op).
+// - true_false: format_value is `empty($value) ? false : true`; reproduced explicitly below.
+// - select: format_value_single() only transforms return_format 'label'/'array'; 'value' (ours)
+//   falls through unchanged. load_value() only reshapes arrays when 'multiple' is set.
+// - color_picker: format_value() only transforms when return_format is 'array'; 'string' (ours)
+//   is returned unchanged.
+// Deliberately NOT included: group/repeater fields (value is assembled from sub-fields, no single
+// postmeta row exists), post_object/relationship (hydrates WP_Post objects), image/gallery/file
+// (resolves attachment ID to URL/array), wysiwyg (runs wpautop + acf_the_content filters),
+// time_picker (storage format differs from display return_format). Do not add a type here without
+// re-reading its format_value()/load_value() in includes/acf/includes/fields/.
+function mapster_feature_field_is_raw_safe(  $meta  ) {
+    if ( !$meta ) {
+        return false;
+    }
+    switch ( $meta['type'] ) {
+        case 'text':
+        case 'number':
+        case 'url':
+        case 'true_false':
+            return true;
+        case 'color_picker':
+            return (( $meta['return_format'] ?: 'string' )) === 'string';
+        case 'select':
+            return empty( $meta['multiple'] ) && (( $meta['return_format'] ?: 'value' )) === 'value';
+        default:
+            return false;
+    }
+}
+
+function mapster_feature_field_coerce_raw(  $raw, $meta  ) {
+    if ( $meta['type'] === 'true_false' ) {
+        return !empty( $raw );
+    }
+    return $raw;
+}
+
 // Like get_config_field but used for feature posts (locations/lines/polygons).
 // When get_field() returns false and no value is saved, falls back to the ACF-registered
 // default_value for that field — matching how the legacy template-based path handles
 // posts imported without ACF meta being written (e.g. via import plugins).
 function get_feature_field(  $key, $post_id  ) {
     static $defaults = null;
+    static $field_meta = null;
     if ( $defaults === null ) {
         $defaults = [];
+        $field_meta = [];
         $groups = [
             'group_6163732e0426e',
             'group_616377d62836b',
@@ -153,6 +214,15 @@ function get_feature_field(  $key, $post_id  ) {
                 $defaults = array_merge( $defaults, mapster_build_flat_defaults( $fields ) );
             }
         }
+        // Wider group list purely to drive the raw-meta fast path below — kept independent of
+        // $defaults above so the pre-existing default-value shortcut's behavior/scope is unchanged.
+        $meta_groups = array_merge( $groups, ['group_6206d24255958'] );
+        foreach ( $meta_groups as $group_id ) {
+            $fields = acf_get_fields( $group_id );
+            if ( $fields ) {
+                mapster_build_flat_field_meta( $fields, '', $field_meta );
+            }
+        }
     }
     static $meta_cache = [];
     if ( !isset( $meta_cache[$post_id] ) ) {
@@ -160,6 +230,8 @@ function get_feature_field(  $key, $post_id  ) {
     }
     if ( array_key_exists( $key, $defaults ) && !array_key_exists( '_' . $key, $meta_cache[$post_id] ) ) {
         $value = $defaults[$key];
+    } elseif ( isset( $field_meta[$key] ) && mapster_feature_field_is_raw_safe( $field_meta[$key] ) && array_key_exists( $key, $meta_cache[$post_id] ) ) {
+        $value = mapster_feature_field_coerce_raw( $meta_cache[$post_id][$key][0], $field_meta[$key] );
     } else {
         $value = get_field( $key, $post_id );
     }
@@ -1097,7 +1169,7 @@ function createSdkResponse(  $post_id, $feature_ids_to_load, $override = []  ) {
                 "cache"      => array(
                     "enabled"    => get_config_field( "cache_use_cache", $post_id, $override ),
                     "cache_date" => mapster_get_cache_date( $post_id ),
-                    "cache_url"  => trailingslashit( wp_upload_dir()['basedir'] ) . 'mapster/map-' . $post_id . '.json',
+                    "cache_url"  => 'mapster/map-' . $post_id . '.json',
                 ),
                 "embed"      => array(
                     "enabled"         => get_config_field( "embed_allow_embed", $post_id, $override ),
@@ -1518,13 +1590,14 @@ function getFeatures(  $feature_ids_to_load  ) {
                     $type = $featureType;
                 }
             }
-            $feat_content = get_the_content( $post_id );
+            $feat_content = get_the_content( null, null, $post_id );
             $feat_categories = mapster_getTermList( $post_id );
-            $feat_metadata = getAdditionalMetadata( $acf_keys, $post_id );
+            $feat_all_meta = get_post_meta( $post_id );
+            $feat_metadata = getAdditionalMetadata( $acf_keys, $post_id, $feat_all_meta );
             $feat_carbon_props = null;
             if ( mwm_fs()->is__premium_only() && mwm_fs()->can_use_premium_code() ) {
                 $feat_carbon_props = [];
-                foreach ( mapster_get_custom_properties( $post_id ) as $property ) {
+                foreach ( mapster_get_custom_properties( $post_id, $feat_all_meta ) as $property ) {
                     $feat_carbon_props[$property['property_name']] = $property['property_value'];
                 }
             }
@@ -1826,8 +1899,10 @@ function getSubmissionURL() {
  * Falls back to carbon_get_post_meta() if nothing matches, to cover posts whose data is
  * still in an older Carbon storage format that only Carbon's own migration logic reads.
  */
-function mapster_get_custom_properties(  $post_id  ) {
-    $all_meta = get_post_meta( $post_id );
+function mapster_get_custom_properties(  $post_id, $all_meta = null  ) {
+    if ( $all_meta === null ) {
+        $all_meta = get_post_meta( $post_id );
+    }
     $properties = array();
     $has_unrecognized_key = false;
     foreach ( $all_meta as $key => $value ) {
@@ -1850,11 +1925,17 @@ function mapster_get_custom_properties(  $post_id  ) {
     return array_values( $properties );
 }
 
-function getAdditionalMetadata(  $acf_keys, $post_id  ) {
-    $all_meta = get_post_meta( $post_id );
+function getAdditionalMetadata(  $acf_keys, $post_id, $all_meta = null  ) {
+    if ( $all_meta === null ) {
+        $all_meta = get_post_meta( $post_id );
+    }
+    $acf_key_lookup = array_flip( $acf_keys );
     $result = [];
     foreach ( $all_meta as $key => $value ) {
-        if ( in_array( $key, $acf_keys, true ) ) {
+        if ( isset( $acf_key_lookup[$key] ) ) {
+            continue;
+        }
+        if ( is_protected_meta( $key, 'post' ) ) {
             continue;
         }
         if ( preg_match( '/^field_[a-f0-9]+$/', $value[0] ) ) {

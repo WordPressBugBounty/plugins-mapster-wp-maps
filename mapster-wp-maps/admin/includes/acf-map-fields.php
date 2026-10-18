@@ -1226,7 +1226,7 @@ if( function_exists('acf_add_local_field_group') ):
 						),
 						'message' => '<div id="mapster-current-style"></div>
 	<a name=\'Style Selector\' href=\'#TB_inline?width=100&inlineId=mapster-style-selector\' class="thickbox button button-primary button-large">Select a Style</a>
-	<div id="mapster-style-selector" style="display:none;></div>',
+	<div id="mapster-style-selector" style="display:none;"></div>',
 						'new_lines' => 'wpautop',
 						'esc_html' => 0,
 					),

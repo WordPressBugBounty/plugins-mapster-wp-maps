@@ -9,14 +9,14 @@
  * that starts the plugin.
  *
  * @link              https://mapster.me
- * @since             2.0.5
+ * @since             2.0.6
  * @package           Mapster_Wordpress_Maps
  *
  * @wordpress-plugin
  * Plugin Name:       Mapster WP Maps
  * Plugin URI:        https://wpmaps.mapster.me/
  * Description:       Mapster WP Maps is the smoothest, easiest way to make maps for your site. No API keys required.
- * Version:           2.0.5
+ * Version:           2.0.6
  * Author:            Mapster Technology Inc
  * Author URI:        https://mapster.me
  * License:           GPL-2.0+
@@ -50,7 +50,7 @@ For version numbers, update in this file at top and in definition; update in REA
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '2.0.5' );
+define( 'MAPSTER_WORDPRESS_MAPS_VERSION', '2.0.6' );
 define( 'MAPSTER_LOCAL_TESTING', ( get_bloginfo( 'name' ) == "Mapster Wordpress Maps Development" ? true : false ) );
 /**
  * Freemius loading and integration
@@ -68,16 +68,17 @@ if ( function_exists( 'mwm_fs' ) ) {
             if ( !isset( $mwm_fs ) ) {
                 // Include Freemius SDK.
                 require_once dirname( __FILE__ ) . '/freemius/start.php';
-                $mwm_fs = fs_dynamic_init( array(
-                    'id'               => '10260',
-                    'slug'             => 'mapster-wp-maps',
-                    'type'             => 'plugin',
-                    'public_key'       => 'pk_91077b881f40e3e18dd3c28db6e1d',
-                    'is_premium'       => false,
-                    'premium_suffix'   => 'Pro',
-                    'has_addons'       => false,
-                    'has_paid_plans'   => true,
-                    'menu'             => array(
+                $mwm_fs_args = array(
+                    'id'                  => '10260',
+                    'slug'                => 'mapster-wp-maps',
+                    'type'                => 'plugin',
+                    'public_key'          => 'pk_91077b881f40e3e18dd3c28db6e1d',
+                    'is_premium'          => true,
+                    'premium_suffix'      => 'Pro',
+                    'has_premium_version' => true,
+                    'has_addons'          => false,
+                    'has_paid_plans'      => true,
+                    'menu'                => array(
                         'slug'    => 'wordpress-maps-settings',
                         'contact' => false,
                         'support' => false,
@@ -85,9 +86,19 @@ if ( function_exists( 'mwm_fs' ) ) {
                             'slug' => 'edit.php?post_type=mapster-wp-map',
                         ),
                     ),
-                    'is_live'          => true,
-                    'is_org_compliant' => true,
-                ) );
+                );
+                /**
+                 * Sandbox mode (for local dev/testing of simulated purchases only).
+                 * Lives in freemius-secret.php, which is gitignored and therefore
+                 * never tracked by git -- so it's automatically excluded from any
+                 * `git archive` release zip. Create that file locally with:
+                 *   <?php return 'sk_...your_secret_key...';
+                 */
+                $mwm_fs_secret_key_file = dirname( __FILE__ ) . '/freemius-secret.php';
+                if ( MAPSTER_LOCAL_TESTING && file_exists( $mwm_fs_secret_key_file ) ) {
+                    $mwm_fs_args['secret_key'] = (require $mwm_fs_secret_key_file);
+                }
+                $mwm_fs = fs_dynamic_init( $mwm_fs_args );
             }
             return $mwm_fs;
         }

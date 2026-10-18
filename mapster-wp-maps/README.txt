@@ -3,8 +3,8 @@ Contributors: tempranova, mapster
 Donate link: https://wpmaps.mapster.me/
 Tags: maplibre, mapbox, maps, interactive map, gis
 Requires at least: 5.0.0
-Tested up to: 7.0
-Stable tag: 2.0.5
+Tested up to: 7.1
+Stable tag: 2.0.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -220,6 +220,14 @@ Email us at https://mapster.me, write a [feature request](https://mapster-wp-map
 
 == Changelog ==
 
+= 2.0.6 =
+* Security fix on Mapmaker endpoint
+* Bug fix for scrolling display of geocoder list
+* Fix for cooperative gestures
+* Numerous performance improvements
+* Fixes to pattern polygon functionality
+* Style selector in classic editor
+* Correcting excluded categories in category control
 = 2.0.5 =
 * Cache busting
 * Cluster clicking fixes

@@ -489,8 +489,7 @@ class Mapster_Wordpress_Maps_Admin_API {
             'methods'             => 'POST',
             'callback'            => 'mapster_wp_maps_mapmaker_save',
             'permission_callback' => function () {
-                return true;
-                // open to public
+                return current_user_can( 'manage_options' );
             },
         ) );
         function mapster_wp_maps_mapmaker_save(  $request  ) {
@@ -849,6 +848,11 @@ class Mapster_Wordpress_Maps_Admin_API {
             $ignore_cache = $params['ignore_cache'];
             $single_feature_id = ( isset( $params['single_feature_id'] ) ? intval( $params['single_feature_id'] ) : false );
             $feature_ids = ( isset( $params['feature_ids'] ) ? explode( ',', $params['feature_ids'] ) : false );
+            // Serve from cache before doing any ACF/field work -- only applies to full-map
+            // requests (no single-feature filter), matching the branch below that would
+            // otherwise reach this same check after building $acf_data/$minimized_data etc.
+            if ( !$single_feature_id && !$feature_ids ) {
+            }
             $acf_data = get_field_objects( $post_id );
             $minimized_data = array();
             // Top level properties
@@ -900,6 +904,7 @@ class Mapster_Wordpress_Maps_Admin_API {
                     }
                 }
             } else {
+                // Cache already checked and missed/disabled above, before $acf_data was built.
                 if ( $progressive_map ) {
                     $minimized_data['all_features'] = array();
                     if ( mapster_can_be_looped( $minimized_data['locations'] ) ) {
@@ -935,13 +940,11 @@ class Mapster_Wordpress_Maps_Admin_API {
                                 )),
                                 'post_status'    => 'publish',
                                 'posts_per_page' => -1,
+                                'fields'         => 'ids',
                             );
                             $the_query = new WP_Query($args);
-                            if ( $the_query->have_posts() ) {
-                                while ( $the_query->have_posts() ) {
-                                    $the_query->the_post();
-                                    array_push( $minimized_data['all_features'], get_the_ID() );
-                                }
+                            foreach ( $the_query->posts as $this_id ) {
+                                array_push( $minimized_data['all_features'], $this_id );
                             }
                         }
                     }
@@ -1032,18 +1035,16 @@ class Mapster_Wordpress_Maps_Admin_API {
                                         'tax_query'      => $tax_queries,
                                         'post_status'    => 'publish',
                                         'posts_per_page' => -1,
+                                        'fields'         => 'ids',
                                     );
                                     $the_query = new WP_Query($args);
-                                    if ( $the_query->have_posts() ) {
-                                        while ( $the_query->have_posts() ) {
-                                            $the_query->the_post();
-                                            if ( !in_array( get_the_ID(), $post_ids_added ) ) {
-                                                array_push( $all_posts, array(
-                                                    "post_type" => get_post_type(),
-                                                    "post_id"   => get_the_ID(),
-                                                ) );
-                                                array_push( $post_ids_added, get_the_ID() );
-                                            }
+                                    foreach ( $the_query->posts as $this_id ) {
+                                        if ( !in_array( $this_id, $post_ids_added ) ) {
+                                            array_push( $all_posts, array(
+                                                "post_type" => get_post_type( $this_id ),
+                                                "post_id"   => $this_id,
+                                            ) );
+                                            array_push( $post_ids_added, $this_id );
                                         }
                                     }
                                 }
@@ -1060,16 +1061,14 @@ class Mapster_Wordpress_Maps_Admin_API {
                                     'tax_query'      => $tax_queries,
                                     'post_status'    => 'publish',
                                     'posts_per_page' => -1,
+                                    'fields'         => 'ids',
                                 );
                                 $the_query = new WP_Query($args);
-                                if ( $the_query->have_posts() ) {
-                                    while ( $the_query->have_posts() ) {
-                                        $the_query->the_post();
-                                        array_push( $all_posts, array(
-                                            "post_type" => get_post_type(),
-                                            "post_id"   => get_the_ID(),
-                                        ) );
-                                    }
+                                foreach ( $the_query->posts as $this_id ) {
+                                    array_push( $all_posts, array(
+                                        "post_type" => get_post_type( $this_id ),
+                                        "post_id"   => $this_id,
+                                    ) );
                                 }
                             }
                             foreach ( $all_posts as $post ) {
@@ -1128,14 +1127,16 @@ class Mapster_Wordpress_Maps_Admin_API {
             // $decoded_response = json_decode('');
             // $decoded_response->config->element = "mapster-wp-maps-" . $post_id;
             // return $decoded_response;
+            //    $remote_url = "https://buurtbomen.nu/wp-json/mapster-wp-maps/map?id=2943&sdk=true";
             //    $ch = curl_init();
-            //    curl_setopt($ch, CURLOPT_URL, "https://ycik.co.za/staging/wp-json/mapster-wp-maps/map?id=4309&sdk=true");
+            //    curl_setopt($ch, CURLOPT_URL, $remote_url);
             //    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             //    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
             //    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
             //    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             // $response = curl_exec($ch);
             //    $decoded_response = json_decode($response);
+            //    $decoded_response = mapster_test_harness_placeholderize_images($decoded_response, parse_url($remote_url, PHP_URL_HOST));
             //    $decoded_response->config->element = "mapster-wp-maps-" . $post_id;
             //    return $decoded_response;
             if ( $returnSdk ) {
@@ -1172,6 +1173,28 @@ class Mapster_Wordpress_Maps_Admin_API {
 function mapster_get_cache_date(  int $post_id  ) {
     $file = trailingslashit( wp_upload_dir()['basedir'] ) . 'mapster/map-' . $post_id . '.json';
     return ( file_exists( $file ) ? filemtime( $file ) : false );
+}
+
+// Dev-only: swaps $remote_host image URLs for placehold.co placeholders (color/label hashed
+// from the original URL) so the local test harness doesn't hit CORS loading remote icons.
+function mapster_test_harness_placeholderize_images(  $data, $remote_host  ) {
+    if ( is_array( $data ) ) {
+        foreach ( $data as $k => $v ) {
+            $data[$k] = mapster_test_harness_placeholderize_images( $v, $remote_host );
+        }
+        return $data;
+    }
+    if ( is_object( $data ) ) {
+        foreach ( $data as $k => $v ) {
+            $data->{$k} = mapster_test_harness_placeholderize_images( $v, $remote_host );
+        }
+        return $data;
+    }
+    if ( is_string( $data ) && preg_match( '/\\.(png|jpe?g|gif|webp|svg)(\\?.*)?$/i', $data ) && !preg_match( '/\\{[xyz]\\}/', $data ) && parse_url( $data, PHP_URL_HOST ) === $remote_host ) {
+        $hash = substr( md5( $data ), 0, 6 );
+        return "https://placehold.co/64x64/{$hash}/ffffff.png?text=" . substr( $hash, 0, 3 );
+    }
+    return $data;
 }
 
 // Returns {id, url} for an ACF image/file field stored as raw attachment ID in post meta.
