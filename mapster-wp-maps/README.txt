@@ -1,182 +1,197 @@
-=== Mapster WP Maps ===
+=== Mapster WP Maps — Mapbox, MapLibre & Google Maps for WordPress ===
 Contributors: tempranova, mapster
 Donate link: https://wpmaps.mapster.me/
-Tags: maplibre, mapbox, maps, interactive map, gis
+Tags: mapbox, maplibre, google maps, store locator, geojson
 Requires at least: 5.0.0
 Tested up to: 7.1
-Stable tag: 2.0.6
+Stable tag: 2.0.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Mapster WP Maps is the smoothest, easiest way to make maps for your site. No API keys required.
+The friendly way to build real Mapbox, MapLibre, or Google maps in WordPress — store locators, GeoJSON data, custom popups, and more. No API key needed to start.
 
 == Description ==
 
-With Mapster WP Maps, we're trying to make the best map editor and creator for Wordpress.
+Mapster WP Maps is a map editor and builder for WordPress — built for people who want more than a pin on a map, without needing to write code to get it.
 
-We integrate **MapLibre, Mapbox, and Google Maps**. You don't need an API key to use MapLibre!
+We integrate **MapLibre, Mapbox, and Google Maps**, and you pick which one powers your site. Prefer not to deal with API keys at all? MapLibre works out of the box, no account or token required.
 
 * [Main site](https://wpmaps.mapster.me/)
 * [Example site](https://wpmaps.mapster.me/examples/)
 * [Documentation](https://wpmaps-docs.mapster.me/) (with video guides!)
 
-Check out the extensive feature list below.
+Full feature list below.
 
-💽 If you're a developer, you can extend this plugin with custom code, too.
+💽 Developer? You can extend this plugin with custom code via JS hooks and events — see the Developer section.
 
 Happy mapping!
 
 == 🌟 Free Version ==
 
-Download the free version from this page. We hope to make this really useful for the vast majority of users. But if you need more, check out [Pro](https://wpmaps.mapster.me/pro)!
+Grab the free version from this page — we built it to genuinely cover most sites, not just to tease you into Pro. If you hit a wall, [Pro](https://wpmaps.mapster.me/pro) is there.
 
 = 🗺️ Map Features =
 
-* Live map editor and preview
+The actual map-building core — pick an engine, pick a look, and get real control over how it behaves, not just where the pin drops.
+
 * Choose between Maplibre (no API key required), Mapbox, and Google Maps
-* 20 default map styles to choose from
-* Use your own custom styles from Mapbox or any map tile provider
-* Shortcodes and Block integrations to place your maps anywhere
+* Live map editor and preview
+* Add unlimited points, polygons, and lines — with clustering for when you've got a lot of them
+* 20 default map styles, or bring your own custom style from Mapbox or any tile provider
+* Mapbox Standard with 3D features and environment, plus 3D terrain
+* Shortcodes and Block editor integrations to place your maps anywhere
 * Variety of map projections available
 * Custom size ranging from specific pixel sizes to full-screen maps
-* Mapbox Standard with 3D features and environment
-* 3D terrain
 * Set custom center, zoom, tilt and rotation of map
-* Have map automatically fit to features
-* Add unlimited features (points, polygons, lines) to maps
-* Cluster circles, labels, or markers for displaying many features at once
-* Change user ability to interact with the map
-* Move map to user IP on map load
+* Have the map automatically fit to your features
+* Control how (or whether) users can interact with the map
+* Move the map to the user's location on load
 
 = 🕹️ Map Controls =
 
-* All controls can be positioned around the map as desired
-* Category filter, where you can hide/show specific categories of features
-* Custom search through features on the map (by text)
+What makes a map usable once it holds more than a handful of pins — search, filter, and navigate real data.
+
+* Category filter — show/hide specific categories of features, with nested AND/OR logic
 * Clickable, filterable dropdown list of features on the map
-* Basic list
 * Geocoder (search by address)
+* All controls can be positioned around the map as desired
+* Custom search through features on the map (by text)
+* Basic list
 * 3D switcher
 * Directions (origin and destination)
-* Geolocation (user tracking)
-* Make map fullscreen
+* Geolocation (track the user's position)
+* Fullscreen mode
 * Zoom control, scale control
 * Modify logo and attribution
 
 = 📍 Geographic Features =
 
-* Easy creation of features by drawing, entering address, or uploading data
-* Unlimited Points, Labels, Text, Markers, Circles, Lines, Bezier Curves, Polygons
-* Custom markers, icons, text
+Every feature on the map — point, line, polygon — gets the same level of styling control, not a stripped-down subset.
+
+* Create features by drawing, entering an address, or uploading data
+* Custom markers, icons, and text, with full control over color, size, rotation, and opacity
+* Reuse geographic features across multiple maps
+* Unlimited points, labels, text, markers, circles, lines, bezier curves, polygons
 * Customize color, borders, opacity, line thickness
-* Custom marker color, size, rotation, anchors
 * Circle radius, opacity, color, border width and color
 * Custom text labels with font choice, positioning, font size, color
-* Custom icons with image of your choice, scale, rotation, position
-* Use geographic features across multiple maps at once
-* Interaction with any feature via click or hover
-* Open popups on click or hover for any features
+* Click or hover interaction on any feature
+* Open popups on click, hover, or map load
 
 = 💬 Popups =
 
-* Set of default popup styles or define your own using a Popup Builder
-* Set popup to open automatically on click or hover, or when the map loads
-* Popup header, description, thumbnail image, button footer all included optionally
-* Easy preview of Popup Builder
-* Set colors and text for popups
-* Add custom CSS for popups to take full control of styling
-* Center popup on map open
-* Zoom on open
-* Close when map clicked
-* Open to directions, custom links, post information, or modal
+Popups are where most "embed a map" plugins stop. This is where Mapster starts.
+
+* Build your own from scratch with the Popup Builder, with live preview as you go
+* Add custom CSS for full control of popup styling
+* Trigger popups on click, hover, or automatically on map load
+* Default popup styles if you'd rather not build one
+* Optional header, description, thumbnail image, and button footer
+* Set colors and text per popup
+* Center and/or zoom the map on popup open
+* Close popups on map click
+* Link popups to directions, custom URLs, post content, or a modal
 
 = 📥 Import =
 
-* Import up to 100 features per file (depending on number of coordinates)
-* Import geoJSON, KML, GPX, Shapefiles
-* All metadata retained in custom fields during import
-* Easily import/export settings between installations
+Bring your data in however it already exists.
+
+* Import GeoJSON, KML, GPX, and Shapefiles
+* All metadata retained as custom fields on import
+* Up to 100 features per file (depending on coordinate complexity)
+* Import and export settings between installs
 
 = 🖳 Developer =
 
+Real JS events to hook into, not a black box.
+
+* Use [JS hooks](https://wpmaps-docs.mapster.me/for-developers/javascript-hooks) to run code on specific map events
+* Add custom scripts with direct access to the `map` variable
+* Shortcodes for outputting specific features by ID
 * Custom permalinks for geographies and maps
-* Add custom scripts to load and get access to the `map` variable
-* Use [hooks](https://wpmaps-docs.mapster.me/for-developers/javascript-hooks) to run scripts on specific map events
-* Shortcodes for outputting features on maps via IDs
 
 == 🌟🌟 Pro Version ==
 
-If you're building a really custom application or need some special functionality, [Pro](https://wpmaps.mapster.me/pro) has got it. We also offer a lot of support and are happy to build out new features.
+Free covers most sites. Pro is for when "most sites" isn't you — thousands of imported locations, a multi-location storefront, crowdsourced submissions, or maps wired directly into ACF and Gravity Forms. It removes the caps rather than selling you a different product. [Pro](https://wpmaps.mapster.me/pro) is built for that, and we're genuinely reachable if you need a hand or a new feature.
+
+> "I have a very demanding and very specific need with literally thousands of locations, lines and areas that needs to be added, with custom pins, and there is simply nothing else that does it so well as this one, even in the free one." — Matt, [WordPress.org review](https://wordpress.org/support/topic/by-far-the-most-comprehensive-map-plugin-i-have-tried/)
 
 = 🗺️ Map Features =
 
-* Additional 16 map styles, for a total of 36 styles available
+More control over how the map behaves once it's carrying real weight.
+
+* Advanced clustering — control size, color, and behavior of clusters, or replace them with your own images
+* Pull in custom post type data via the Mapster ACF field
+* 16 additional map styles (36 total)
+* 3D globe view and 3D buildings
 * Custom images as the map base, including scalable SVGs
-* Set 3D globe view
-* Add 3D buildings
+* Restrict map movement to a defined boundary
+* Custom map sizes per screen width (mobile breakpoints)
 * Set map language
-* Restrict map movement to specific boundaries
-* Set custom sizes of the map at different screen widths (mobile breakpoints)
-* Advanced clustering options for size, color, and settings of clusters
-* Replace clusters with images
-* Choose cooperative gestures to avoid accidental map scrolling
+* Cooperative gestures (avoid accidental scroll-jacking)
 * Customize the map loading graphic
-* Add data to custom post types and add them to your map (Mapster ACF field)
-* Geolocate to user IP address
+* Geolocate by IP address
 
 = 🕹️ Map Controls =
 
-* Manually order controls to appear the way you want on the map
-* High accuracy geolocation, user heading, tracking as user moves, accuracy circle
-* Style switcher to change between different Mapbox or Maplibre style JSONs
-* Layer switcher to turn off and on layers from your Mapbox style
-* Custom HTML control to make your own interactivity
-* Print control to allow users to download an image of the map
-* Download control (users can download all geographic features from the map)
-* Allow searching by latitude and longitude in geocoder
-* Display images in clickable feature lists
-* Change type of filtering (inclusive or exclusive), set initial visibility, add additional filters based on custom fields
-* Store Locator list
-* List of features can be ordered and grouped by categories
-* Manually order categories for category filter
-* Manually order controls appearance on map
-* Create a toggleable container to open/close your controls
+The control set for real multi-location sites — a proper store locator, not just a longer list.
+
+* Store Locator list, with feature lists ordered and grouped by category
+* Inclusive/exclusive filtering, initial visibility, and filters on custom fields
+* High-accuracy geolocation — heading, live tracking, accuracy circle
+* Download control — let users export the map's geographic data
+* Print control — download the map as an image
+* Style switcher between Mapbox or Maplibre style JSONs
+* Layer switcher for your Mapbox style's layers
+* Custom HTML control for your own interactivity
+* Search by latitude/longitude in the geocoder
+* Images in clickable feature lists
+* Manually order how controls and categories appear
+* Collapsible container to show/hide your controls
 
 = 📍 Geographic Features =
 
-* Add MultiLineStrings, MultiPolygons
-* Change styles of features on hover
-* Add 3D models (GLB) and set size and rotation
-* Add images on top of polygons as image layers
-* Static sized icons to real-world measurements
-* Mass edit features to make changes to 100s of styles at once
-* Add images to map, defined by drawn polygons
+For when a flat icon isn't enough, or you've got hundreds of features to manage at once.
+
+* Mass-edit hundreds of features' styles at once
+* 3D models (GLB) with custom size and rotation
+* MultiLineStrings and MultiPolygons
+* Hover styles for features
+* Images layered on top of polygons, or clipped to drawn polygon shapes
+* Static icon sizes at real-world scale
 
 = 💬 Popups =
 
+Pull real data in, or throw out the template entirely.
+
+* Pull custom field data (ACF or built-in) into popups
+* Replace popups entirely with custom HTML
 * Render shortcodes inside popups
-* Button to open modal with more information
-* Open directly to modal on marker click
-* Replace Popups completely with custom HTML
-* Insert data from custom fields into your popups (using ACF or built-in fields)
+* Button to open a modal with more detail, or open directly to one on marker click
 
 = 💾 Big Data =
 
-* Unlimited size of imports
-* Caching for quick loading of map
-* Import from Google Sheets
-* Manage automatic uploading of data to Mapbox through the Mapbox Tiling Service
-* Access and create Spatial APIs from your data
+No ceiling on how much data your map can hold, and it still loads fast.
+
+* No limit on import size
+* Caching for fast map loads
+* Spatial API access, built from your own data
+* Import directly from Google Sheets
+* Automatic upload to the Mapbox Tiling Service for large datasets
 
 = 🌎 Specialty Maps =
 
-* Allow users to submit points to make a crowdsourced map
-* Compare two different maps
-* Add elevation detail for a route
-* Design heatmaps with big data
-* Creating a listing page that connects your custom posts with geographic data on the map
+Purpose-built map types for the two requests we hear most: crowdsourcing and directories.
+
+* Crowdsourced maps — let users submit their own points
+* Listing pages connecting custom posts to geographic data
+* Heatmaps for large datasets
+* Compare two maps side by side
+* Elevation detail along a route
 
 = 🖳 Developer =
+
+Location data flows in from the tools you already use.
 
 * Advanced Custom Fields (ACF) field type for maps
 * Gravity Forms map field
@@ -190,36 +205,77 @@ Your Friends at [Mapster](https://mapster.me)
 1. Upload `mapster-wp-maps.php` to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Click on "Maps" to start building your maps.
-4. Add an Access Token if you would like to use custom Mapbox styles or geocoders
-5. Use the provided shortcodes to output these maps in your posts or widgets.
+4. Add an Access Token if you'd like custom Mapbox styles or the geocoder.
+5. Use the provided shortcodes (or the block editor) to place your maps in posts or pages.
 
 == Frequently Asked Questions ==
 
+= Do I need a Mapbox or Google API key to use this? =
+
+No. MapLibre works completely free with no API key or account — it's the easiest way to get started. Mapbox and Google Maps are there if you want their specific styles or features, and each needs its own key from that provider.
+
+= Does this work with Elementor, Divi, Bricks, or other page builders? =
+
+Yes — Mapster outputs a standard shortcode or block, so it drops into Elementor, Divi, Bricks, the Classic Editor, or Gutenberg like any other embeddable content.
+
+= Can I import GeoJSON, KML, GPX, or Shapefiles? =
+
+Yes, all four are supported in the free version, with metadata preserved as custom fields on import. Pro removes the size limit and adds CSV and Google Sheets import, including scheduled recurring imports.
+
+= How is this different from a basic Google Maps embed plugin? =
+
+Most WordPress map plugins give you a pin on an embed. Mapster is closer to a real map editor — styling, clustering, popups, filters, data import, and three different rendering engines (Mapbox, MapLibre, Google Maps) under one interface. If you just need "here's our office," this might be more than you need. If you need a map that actually does something, that's what it's built for.
+
+= Will this slow down my site? =
+
+The map library loads only on pages where you've placed a map. Pro adds map caching specifically to keep larger datasets (hundreds or thousands of features) loading quickly.
+
+= Is there a store locator? =
+
+Yes. The free version includes a basic feature list; Pro adds a dedicated Store Locator control with filtering, hours, grouping by category, and distance sorting.
+
+= Can users submit their own locations (crowdsourced maps)? =
+
+Yes, this is a Pro feature — visitors can submit points through a front-end form, which you can moderate before they appear on the map.
+
+= Is this GDPR-friendly? =
+
+Mapster doesn't track visitors or send personal data anywhere by itself. Using Google Maps or Mapbox means their respective terms and data practices apply, same as embedding a video from any third-party service — MapLibre avoids that entirely since it doesn't require an account with anyone.
+
+= Does this work with WPML or other translation plugins? =
+
+Yes, map content and labels are translatable through WPML, and several control strings (like User Submission) ship with translation support out of the box.
+
+= Can I use Advanced Custom Fields (ACF) or Gravity Forms with my maps? =
+
+Yes — Pro includes a dedicated Mapster field type for ACF, and a Gravity Forms map field, so location data from your existing forms and post types can feed directly into a map.
+
 = Something seems broken! =
 
-Get in touch with us at [https://wpmaps.mapster.me/](https://wpmaps.mapster.me/) and we'll message you back right away.
+Get in touch at [https://wpmaps.mapster.me/](https://wpmaps.mapster.me/) and we'll get back to you quickly — there's a real person (not a ticket queue) on the other end.
 
-= Do you have any instructions on how to use the plugin? =
+= Where can I learn how to use the plugin? =
 
-We've got you covered with extensive documentation at [https://wpmaps-docs.mapster.me/](https://wpmaps-docs.mapster.me/).
+Start with [the documentation](https://wpmaps-docs.mapster.me/), which includes written guides and video walkthroughs for both the free and Pro feature sets.
 
 = You almost have what I need, but not quite... =
 
-Email us at https://mapster.me, write a [feature request](https://mapster-wp-maps.canny.io/feature-requests), or leave a comment in the Wordpress Support Forum.
+Email us at [https://mapster.me](https://mapster.me), post a [feature request](https://mapster-wp-maps.canny.io/feature-requests), or leave a note in the WordPress.org support forum. We build a lot of what gets asked for.
 
 == Screenshots ==
 
-1. Globe view with markers.
-2. Map creation interface with a 3D terrain map.
-3. Heatmap specialty map.
-4. Further view of editing interface.
-5. Dust of the World markers and popups.
-6. Creating custom popups.
-7. Listing map.
-8. Mapbox's Standard Style, usable in this plugin.
+1. A map on the front end, in globe view with styled markers and clustering.
+2. Mapbox's Standard Style, available directly in the plugin.
+3. 3D extruded countries colored and stretched based on values.
+4. A store locator map in the Mapmaker editor.
+5. Custom markers and popups ("A Traveller's Diary" example map).
+6. Building a popup in the Popup Builder.
+7. A listing map with cross-interaction between HTML and the map.
+8. The Mapmaker editor, building a map with 3D terrain.
+9. A heatmap built from imported data.
 
-== Changelog ==
-
+= 2.0.7 =
+* Security fix for ACF Photo Gallery (credit to Dreni)
 = 2.0.6 =
 * Security fix on Mapmaker endpoint
 * Bug fix for scrolling display of geocoder list

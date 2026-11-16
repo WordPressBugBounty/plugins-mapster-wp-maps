@@ -1657,7 +1657,7 @@ function getFeatures(  $feature_ids_to_load  ) {
                 "interactivity" => array(
                     "interaction"  => get_feature_field( "interaction", $post_id ),
                     "click_mobile" => get_feature_field( "click_on_mobile", $post_id ),
-                    "default_zoom" => get_feature_field( "default_zoom_level", $post_id ),
+                    "default_zoom" => get_field( "default_zoom_level", $post_id ),
                     "direct_link"  => array(
                         "enabled" => get_feature_field( "open_link_on_click", $post_id ),
                         "url"     => get_feature_field( "click_link_url", $post_id ),
@@ -1737,7 +1737,7 @@ function getFeatures(  $feature_ids_to_load  ) {
                 $thisFeature["properties"] = array(
                     "text"  => array(
                         "enabled"    => get_feature_field( "label_label_on", $post_id ),
-                        "field"      => popupReplaceValues( get_feature_field( "label_text_properties_text-field", $post_id ), $post_id, $feat_carbon_props ),
+                        "field"      => popupReplaceValues( get_field( "label_text_properties_text-field", $post_id ), $post_id, $feat_carbon_props ),
                         "font"       => get_feature_field( "label_text_properties_text-font", $post_id ),
                         "size"       => returnNumber( get_feature_field( "label_text_properties_text-size", $post_id ) ),
                         "color"      => get_feature_field( "label_text_properties_text-color", $post_id ),

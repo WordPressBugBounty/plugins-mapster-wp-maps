@@ -3,6 +3,10 @@ body #mapster-wp-maps {
   position: relative !important;
 }
 
+#menu-posts-mapster-wp-map li:has(> a[href*="page=wordpress-maps-mapmaker"]) {
+  display: none;
+}
+
 @keyframes border-pulsate {
     0%   { border-color: rgba(0, 255, 255, 1); }
     50%  { border-color: rgba(0, 255, 255, 0); }

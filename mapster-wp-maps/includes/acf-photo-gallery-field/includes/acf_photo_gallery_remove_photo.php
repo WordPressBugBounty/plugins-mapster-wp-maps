@@ -7,7 +7,14 @@ if( ! defined( 'ABSPATH' ) ) exit;
 function acf_photo_gallery_remove_photo(){
 	if( wp_verify_nonce( $_GET['_wpnonce'], 'nonce_acf_photo_gallery') and !empty($_GET['post']) and !empty($_GET['photo']) ){
 		$field = sanitize_text_field($_GET['field']);
-		$post = sanitize_text_field($_GET['post']);
+		$post = intval($_GET['post']);
+
+		// The nonce action is global, not tied to $post -- without this check any logged-in
+		// user's nonce could be replayed against any post ID to modify its postmeta.
+		if ( ! current_user_can( 'edit_post', $post ) ) {
+			die();
+		}
+
 		$photo = sanitize_text_field($_GET['photo']);
 		$photo = preg_replace('/\D/', '', $photo);
 		$id = str_replace('acf-field-', '', sanitize_text_field($_GET['id']));

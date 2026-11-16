@@ -9,10 +9,17 @@ function acf_photo_gallery_edit_save(){
 
 		$request = $_POST;
 		$field = sanitize_text_field($request['acf-pg-hidden-field']);
-		$post = sanitize_text_field($request['acf-pg-hidden-post']);
-		$attachment = sanitize_text_field($request['acf-pg-hidden-attachment']);
+		$post = intval($request['acf-pg-hidden-post']);
+		$attachment = intval($request['acf-pg-hidden-attachment']);
 		$title = sanitize_text_field($request['title']);
 		$caption = sanitize_textarea_field($request['caption']);
+
+		// The nonce only proves the current user holds a token for this action -- it is not
+		// tied to $attachment, so without this check any logged-in user could overwrite the
+		// title/content/meta of any post, page, or attachment on the site.
+		if ( ! current_user_can( 'edit_post', $attachment ) ) {
+			die();
+		}
 
 		unset( $request['acf-pg-hidden-field'] );
 		unset( $request['acf-pg-hidden-post'] );
